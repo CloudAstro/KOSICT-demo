@@ -1,0 +1,268 @@
+global:
+  enabled: true
+  tlsDisable: true
+  psp:
+    enable: false
+    annotations: |
+      seccomp.security.alpha.kubernetes.io/allowedProfileNames: docker/default,runtime/default
+      apparmor.security.beta.kubernetes.io/allowedProfileNames: runtime/default
+      seccomp.security.alpha.kubernetes.io/defaultProfileName:  runtime/default
+      apparmor.security.beta.kubernetes.io/defaultProfileName:  runtime/default
+
+  serverTelemetry:
+    prometheusOperator: false
+
+injector:
+  enabled: false
+  replicas: 1
+  port: 8080
+  leaderElector:
+    enabled: true
+  metrics:
+    enabled: false
+  externalVaultAddr: ""
+  image:
+    registry: "docker.io"
+    repository: "hashicorp/vault-k8s"
+    tag: "1.4.2"
+    pullPolicy: IfNotPresent
+  agentImage:
+    registry: "quay.io"
+    repository: "openbao/openbao"
+    tag: ""
+    pullPolicy: IfNotPresent
+  agentDefaults:
+    cpuLimit: "500m"
+    cpuRequest: "250m"
+    memLimit: "128Mi"
+    memRequest: "64Mi"
+    template: "map"
+    templateConfig:
+      exitOnRetryFailure: true
+      staticSecretRenderInterval: ""
+  livenessProbe:
+    failureThreshold: 2
+    initialDelaySeconds: 5
+    periodSeconds: 2
+    successThreshold: 1
+    timeoutSeconds: 5
+  readinessProbe:
+    failureThreshold: 2
+    initialDelaySeconds: 5
+    periodSeconds: 2
+    successThreshold: 1
+    timeoutSeconds: 5
+  startupProbe:
+    failureThreshold: 12
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    successThreshold: 1
+    timeoutSeconds: 5
+
+  authPath: "auth/kubernetes"
+  logLevel: "info"
+  logFormat: "standard"
+  revokeOnShutdown: false
+
+  webhook:
+    failurePolicy: Ignore
+    matchPolicy: Exact
+    timeoutSeconds: 30
+    namespaceSelector: {}
+    objectSelector: |
+      matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: NotIn
+        values:
+        - {{ template "openbao.name" . }}-agent-injector
+
+  certs:
+    secretName: null
+    caBundle: ""
+    certName: tls.crt
+    keyName: tls.key
+  securityContext:
+    pod: {}
+    container: {}
+
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 256Mi
+      cpu: 250m
+
+  affinity: |
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ template "openbao.name" . }}-agent-injector
+              app.kubernetes.io/instance: "{{ .Release.Name }}"
+              component: webhook
+          topologyKey: kubernetes.io/hostname
+
+  hostNetwork: false
+server:
+  enabled: true
+  image:
+    registry: "quay.io"
+    repository: "openbao/openbao"
+    tag: ""
+    pullPolicy: IfNotPresent
+  updateStrategyType: "OnDelete"
+  podManagementPolicy: "Parallel"
+  logLevel: "info"
+  logFormat: "json"
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 256Mi
+      cpu: 250m
+
+  ingress:
+    enabled: true
+    annotations: |
+      kubernetes.io/ingress.allow-http: "false"
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    ingressClassName: "nginx"
+    pathType: Prefix
+    activeService: true
+    hosts:
+      - host: vault.cloudastro.io
+        paths:
+          - /
+    tls: 
+      - secretName: vault-ingress-tls
+        hosts:
+          - vault.cloudastro.io
+
+  route:
+    enabled: false
+  authDelegator:
+    enabled: true
+  shareProcessNamespace: false
+  readinessProbe:
+    enabled: true
+    port: 8200
+    failureThreshold: 2
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    successThreshold: 1
+    timeoutSeconds: 3
+  livenessProbe:
+    enabled: false
+  terminationGracePeriodSeconds: 10
+  preStopSleepSeconds: 5
+
+  networkPolicy:
+    enabled: false
+    egress: []
+    # egress:
+    # - to:
+    #   - ipBlock:
+    #       cidr: 10.0.0.0/24
+    #   ports:
+    #   - protocol: TCP
+    #     port: 443
+    ingress:
+      - from:
+          - namespaceSelector: {}
+        ports:
+          - port: 8200
+            protocol: TCP
+          - port: 8201
+            protocol: TCP
+
+  configAnnotation: false
+
+  service:
+    enabled: true
+    active:
+      enabled: true
+    standby:
+      enabled: true
+    instanceSelector:
+      enabled: true
+    port: 8200
+    targetPort: 8200
+
+  dataStorage:
+    enabled: true
+    size: 10Gi
+    mountPath: "/openbao/data"
+    storageClass: null
+    accessMode: ReadWriteOnce
+
+  persistentVolumeClaimRetentionPolicy: {}
+  auditStorage:
+    enabled: false
+    size: 10Gi
+    mountPath: "/openbao/audit"
+    storageClass: null
+    accessMode: ReadWriteOnce
+  
+  dev:
+    enabled: false
+    devRootToken: "root"
+  standalone:
+    enabled: false
+  hostNetwork: false
+
+  extraEnvironmentVars:
+      VAULT_API_ADDR: "http://$(HOSTNAME).vault-internal:8200"
+  ha:
+    enabled: true
+    replicas: 3
+    raft:
+      setNodeId: true
+      enabled: true
+      config: |
+        ui = true
+        disable_mlock = true
+        cluster_addr = "https://HOSTNAME.vault-internal:8201"
+        service_registration "kubernetes" {}
+
+        listener "tcp" {
+          tls_disable = 1
+          proxy_protocol_behavior = "use_always"
+          address = "[::]:8200"
+          cluster_address = "[::]:8201"
+        }
+        storage "raft" {
+          path = "/vault/data"
+
+          retry_join {
+            leader_api_addr = "http://vault-0.vault-internal:8200"
+          }
+          retry_join {
+            leader_api_addr = "http://vault-1.vault-internal:8200"
+          }
+          retry_join {
+            leader_api_addr = "http://vault-2.vault-internal:8200"
+          }
+        }
+ui:
+  enabled: true
+  publishNotReadyAddresses: true
+  activeOpenbaoPodOnly: false
+  serviceType: "ClusterIP"
+  serviceNodePort: null
+  externalPort: 8200
+  targetPort: 8200
+
+
+csi:
+  enabled: false
+serverTelemetry:
+  serviceMonitor:
+    enabled: false
+  prometheusRules:
+    enabled: false
+  grafanaDashboard:
+    enabled: false

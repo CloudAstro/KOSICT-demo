@@ -1,76 +1,172 @@
-{{- range $chartName,$chartValues := .Values.apps }}
+{{- /*
+ArgoCD Application Template
+Supports ArgoCD 2.x and 3.x with comprehensive configuration options
+Maintains backward compatibility while providing extensive customization
+*/ -}}
+
+{{- range $chartName, $chartValues := .Values.apps }}
 {{- if ne $chartValues.enabled false }}
+---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: {{ $chartName }}
-  namespace: {{ $.Release.Namespace}}
+  namespace: {{ $.Release.Namespace }}
+  {{- with $chartValues.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   annotations:
-    parametersChecksum: {{ (print $chartValues.helmValues) | sha256sum}}-{{ print $.Values.global | sha256sum}}
+    parametersChecksum: {{ (print $chartValues.helmValues) | sha256sum }}-{{ print $.Values.global | sha256sum }}
     {{- if $chartValues.valueFile }}
     valueFileChecksum: {{ (print ($.Files.Get $chartValues.valueFile)) | sha256sum }}
     {{- end }}
+    {{- if $chartValues.values }}
+    valuesChecksum: {{ (print $chartValues.values) | sha256sum }}
+    {{- end }}
+    {{- with $chartValues.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $chartValues.finalizers }}
+  finalizers:
+    {{- toYaml . | nindent 2 }}
+  {{- end }}
 spec:
-  project: {{ ($.Values.global).projectName | default $.Release.Name }}
-  revisionHistoryLimit: 3
-{{- if $chartValues.ignoreDifferences }}
+  project: {{ $chartValues.project | default $.Values.global.projectName | default $.Release.Name }}
+  revisionHistoryLimit: {{ $chartValues.revisionHistoryLimit | default 3 }}
+  {{- with $chartValues.info }}
+  info:
+    {{- toYaml . | nindent 2 }}
+  {{- end }}
+  {{- if $chartValues.ignoreDifferences }}
   ignoreDifferences:
-{{ toYaml $chartValues.ignoreDifferences | indent 4 }}
-{{- end }}
-{{- if $chartValues.syncPolicy }}
+    {{- toYaml $chartValues.ignoreDifferences | nindent 2 }}
+  {{- end }}
+  {{- if $chartValues.syncPolicy }}
   syncPolicy:
-{{ toYaml $chartValues.syncPolicy | indent 4 }}
-{{- else if not $chartValues.disableAutoSync }}
+    {{- toYaml $chartValues.syncPolicy | nindent 4 }}
+  {{- else if not $chartValues.disableAutoSync }}
   syncPolicy:
     automated:
-      prune: true
-      selfHeal: true
-      allowEmpty: true
+      prune: {{ $chartValues.prune | default true }}
+      selfHeal: {{ $chartValues.selfHeal | default true }}
+      allowEmpty: {{ $chartValues.allowEmpty | default true }}
+    {{- if or $chartValues.syncOptions $chartValues.retry $.Values.global.syncOptions }}
+    {{- if $chartValues.retry }}
+    retry:
+      {{- toYaml $chartValues.retry | nindent 6 }}
+    {{- end }}
     syncOptions:
-      - CreateNamespace=true
-{{- if $chartValues.syncOptions }}
-{{- range $option := $chartValues.syncOptions }}
-      - {{ $option }}
-{{- end }}
-{{- end }}
-{{- else }}
+      - CreateNamespace={{ $chartValues.createNamespace | default true }}
+      {{- with $.Values.global.syncOptions }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with $chartValues.syncOptions }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+    {{- end }}
+  {{- else }}
   syncPolicy: {}
-{{- end }}
+  {{- end }}
+  {{- if $chartValues.destination }}
   destination:
-    server: https://kubernetes.default.svc
-    namespace: {{ $chartValues.namespace }}
+    {{- toYaml $chartValues.destination | nindent 4 }}
+  {{- else }}
+  destination:
+    server: {{ $chartValues.server | default "https://kubernetes.default.svc" }}
+    namespace: {{ $chartValues.namespace | required (printf "namespace is required for app: %s" $chartName) }}
+  {{- end }}
+  {{- if $chartValues.sources }}
+  sources:
+    {{- toYaml $chartValues.sources | nindent 2 }}
+  {{- else }}
   source:
-  {{- if $chartValues.appsBasePath }}
-    path: {{ $chartValues.appsBasePath }}
-  {{- else}}
-    path: {{ $.Values.global.source.appsBasePath }}/{{ $chartName }}
-  {{- end}}
-
-  {{- if $chartValues.repoURL }}
-    repoURL: {{ $chartValues.repoURL }}
-  {{- else}}
-    repoURL: {{ $.Values.global.source.repoURL }}
-  {{- end}}
-  {{- if $chartValues.targetRevision }}
-    targetRevision: {{ $chartValues.targetRevision }}
-  {{- else if $.Values.global.source.targetRevision }}
-    targetRevision: {{ $.Values.global.source.targetRevision }}
-  {{- end}}
+    {{- if $chartValues.repoURL }}
+    repoURL: {{ tpl $chartValues.repoURL $ }}
+    {{- else }}
+    repoURL: {{ tpl $.Values.global.source.repoURL $ }}
+    {{- end }}
+    {{- if $chartValues.targetRevision }}
+    targetRevision: {{ tpl $chartValues.targetRevision $ }}
+    {{- else if $.Values.global.source.targetRevision }}
+    targetRevision: {{ tpl $.Values.global.source.targetRevision $ }}
+    {{- else }}
+    targetRevision: HEAD
+    {{- end }}
+    {{- if $chartValues.path }}
+    path: {{ tpl $chartValues.path $ }}
+    {{- else if $chartValues.appsBasePath }}
+    path: {{ tpl $chartValues.appsBasePath $ }}
+    {{- else }}
+    path: {{ tpl $.Values.global.source.appsBasePath $ }}/{{ $chartName }}
+    {{- end }}
+    {{- with $chartValues.chart }}
+    chart: {{ tpl . $ }}
+    {{- end }}
+    {{- if or $chartValues.helm $.Values.global.helmValues $chartValues.helmValues $chartValues.valueFile $chartValues.values }}
     helm:
-      passCredentials: true
-    {{- if $chartValues.valueFile }}
+      passCredentials: {{ $chartValues.passCredentials | default true }}
+      {{- with $chartValues.releaseName }}
+      releaseName: {{ tpl . $ }}
+      {{- end }}
+      {{- if hasKey $chartValues "skipCrds" }}
+      skipCrds: {{ $chartValues.skipCrds }}
+      {{- end }}
+      {{- with $chartValues.valueFiles }}
+      valueFiles:
+        {{- range . }}
+        - {{ tpl . $ }}
+        {{- end }}
+      {{- end }}
+      {{- if $chartValues.valueFile }}
       values: |
-      {{- include "tpl-values" (dict "values" ($.Files.Get $chartValues.valueFile) "context" $ ) | nindent 8 }}
-      {{- end}}
+        {{- include "tpl-values" (dict "values" ($.Files.Get $chartValues.valueFile) "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if $chartValues.values }}
+      values: |
+        {{- include "tpl-values" (dict "values" $chartValues.values "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if or $.Values.global.helmValues $chartValues.helmValues }}
       parameters:
-       {{- range $name,$value := $.Values.global.helmValues }}
-        - name: {{ $name | quote}}
-          value: {{ tpl $value $ | quote }}
-       {{- end }}
-       {{- range $name,$value := $chartValues.helmValues }}
+        {{- range $name, $value := $.Values.global.helmValues }}
         - name: {{ $name | quote }}
-          value: {{ tpl $value $ | quote }}
-       {{- end }}
----
+          value: {{ include "tpl-values" (dict "values" $value "context" $) | quote }}
+          {{- if $chartValues.forceString }}
+          forceString: true
+          {{- end }}
+        {{- end }}
+        {{- range $name, $value := $chartValues.helmValues }}
+        - name: {{ $name | quote }}
+          value: {{ include "tpl-values" (dict "values" $value "context" $) | quote }}
+          {{- if $chartValues.forceString }}
+          forceString: true
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- with $chartValues.fileParameters }}
+      fileParameters:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- if hasKey $chartValues "ignoreMissingValueFiles" }}
+      ignoreMissingValueFiles: {{ $chartValues.ignoreMissingValueFiles }}
+      {{- end }}
+    {{- end }}
+    {{- with $chartValues.kustomize }}
+    kustomize:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with $chartValues.plugin }}
+    plugin:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with $chartValues.directory }}
+    directory:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  {{- end }}
+  {{- with $chartValues.operation }}
+  operation:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- end }}
 {{- end }}
