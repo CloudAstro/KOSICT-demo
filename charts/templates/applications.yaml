@@ -64,11 +64,11 @@ spec:
       {{- end}}
       parameters:
        {{- range $name,$value := $.Values.global.helmValues }}
-        - name: {{ $name }}
+        - name: {{ $name | quote}}
           value: {{ tpl $value $ }}
        {{- end }}
        {{- range $name,$value := $chartValues.helmValues }}
-        - name: {{ $name }}
+        - name: {{ $name | quote }}
           value: {{ tpl $value $}}
        {{- end }}
 ---
