@@ -107,6 +107,14 @@ cert-manager:
             operator: "NotIn"
             values:
               - "true"
+          - key: control-plane	
+            operator: NotIn	
+            values:	
+              - 'true'	
+          - key: kubernetes.azure.com/managedby	
+            operator: NotIn	
+            values:	
+              - aks
 
     livenessProbe:
       failureThreshold: 3
