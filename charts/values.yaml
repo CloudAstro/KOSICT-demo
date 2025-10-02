@@ -8,6 +8,7 @@ global:
 
 apps:
   cert-manager:
+    enabled: true
     namespace: cert-manager
-    helmValues: 
+    helmValues:
       cert-manager.crds.enabled: "true"
