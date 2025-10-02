@@ -1,3 +1,13 @@
+global:
+  env: dev
+  projectName: kosict
+  source:
+    appsBasePath: "charts/apps"
+    repoURL: "https://github.com/CloudAstro/KOSICT-demo.git"
+    targetRevision: main
+
 apps:
   cert-manager:
     namespace: cert-manager
+    helmValues: 
+      cert-manager.crds.enabled: "true"

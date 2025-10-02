@@ -1,0 +1,78 @@
+{{- range $chartName,$chartValues := .Values.apps }}
+{{- if ne $chartValues.enabled false }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ $chartName }}
+  namespace: {{ $.Release.Namespace}}
+  annotations:
+    parametersChecksum: {{ (print $chartValues.helmValues) | sha256sum}}-{{ print $.Values.global | sha256sum}}
+    {{- if $chartValues.valueFile }}
+    valueFileChecksum: {{ (print ($.Files.Get $chartValues.valueFile)) | sha256sum }}
+    {{- end }}
+spec:
+  project: {{ ($.Values.global).projectName | default $.Release.Name }}
+  revisionHistoryLimit: 3
+{{- if $chartValues.ignoreDifferences }}
+  ignoreDifferences:
+{{ toYaml $chartValues.ignoreDifferences | indent 4 }}
+{{- end }}
+{{- if $chartValues.syncPolicy }}
+  syncPolicy:
+{{ toYaml $chartValues.syncPolicy | indent 4 }}
+{{- else if not $chartValues.disableAutoSync }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: true
+    syncOptions:
+      - CreateNamespace=true
+{{- if $chartValues.syncOptions }}
+{{- range $option := $chartValues.syncOptions }}
+      - {{ $option }}
+{{- end }}
+{{- end }}
+{{- else }}
+  syncPolicy: {}
+{{- end }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ $chartValues.namespace }}
+  source:
+  {{- if $chartValues.appsBasePath }}
+    path: {{ $chartValues.appsBasePath }}
+  {{- else}}
+    path: {{ $.Values.global.source.appsBasePath }}/{{ $chartName }}
+  {{- end}}
+
+  {{- if $chartValues.repoURL }}
+    repoURL: {{ $chartValues.repoURL }}
+  {{- else}}
+    repoURL: {{ $.Values.global.source.repoURL }}
+  {{- end}}
+  {{- if $chartValues.targetRevision }}
+    targetRevision: {{ $chartValues.targetRevision }}
+  {{- else if $.Values.global.source.targetRevision }}
+    targetRevision: {{ $.Values.global.source.targetRevision }}
+  {{- end}}
+    helm:
+      passCredentials: true
+    {{- if $chartValues.valueFile }}
+      values: |
+      {{- include "tpl-values" (dict "values" ($.Files.Get $chartValues.valueFile) "context" $ ) | nindent 8 }}
+      {{- end}}
+      parameters:
+       {{- range $name,$value := $.Values.global.helmValues }}
+        - name: {{ $name | quote}}
+          value: {{ tpl $value $ | quote }}
+          forceString: true
+       {{- end }}
+       {{- range $name,$value := $chartValues.helmValues }}
+        - name: {{ $name | quote}}
+          value: {{ tpl $value $ | quote }}
+          forceString: true
+       {{- end }}
+---
+{{- end }}
+{{- end }}
