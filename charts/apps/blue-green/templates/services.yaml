@@ -1,40 +1,37 @@
----
+{{- if .Values.blue.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "helm-guestbook.fullname" . }}
+  name: {{ include "mychart.fullname" . }}-blue
   labels:
-    app: {{ template "helm-guestbook.name" . }}
-    chart: {{ template "helm-guestbook.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    app: {{ include "mychart.name" . }}
+    track: blue
 spec:
-  type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: http
+    - port: {{ .Values.blue.servicePort }}  
+      targetPort: {{ .Values.blue.containerPort }} 
       protocol: TCP
-      name: http
   selector:
-    app: {{ template "helm-guestbook.name" . }}
-    release: {{ .Release.Name }}
+    app: {{ include "mychart.name" . }}
+    track: blue
+{{- end }}
+
 ---
+
+{{- if .Values.green.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "helm-guestbook.fullname" . }}-preview
+  name: {{ include "mychart.fullname" . }}-green
   labels:
-    app: {{ template "helm-guestbook.name" . }}
-    chart: {{ template "helm-guestbook.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    app: {{ include "mychart.name" . }}
+    track: green
 spec:
-  type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: http
+    - port: {{ .Values.green.servicePort }}  
+      targetPort: {{ .Values.green.containerPort }}
       protocol: TCP
-      name: http
   selector:
-    app: {{ template "helm-guestbook.name" . }}
-    release: {{ .Release.Name }}
+    app: {{ include "mychart.name" . }}
+    track: green
+{{- end }}
