@@ -65,13 +65,11 @@ spec:
       parameters:
        {{- range $name,$value := $.Values.global.helmValues }}
         - name: {{ $name | quote}}
-          value: {{ tpl $value $ | quote }}
-          forceString: true
+          value: {{ tpl $value $ }}
        {{- end }}
        {{- range $name,$value := $chartValues.helmValues }}
         - name: {{ $name | quote}}
-          value: {{ tpl $value $ | quote }}
-          forceString: true
+          value: {{ tpl $value $}}
        {{- end }}
 ---
 {{- end }}
