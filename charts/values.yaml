@@ -12,3 +12,8 @@ apps:
     namespace: cert-manager
     helmValues:
       cert-manager.crds.enabled: "true"
+  blue-green:
+    enabled: true
+    namespace: blue-green
+    helmValues:   
+      cert-manager.crds.enabled: "true"
