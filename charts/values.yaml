@@ -15,4 +15,6 @@ apps:
   blue-green:
     enabled: true
     namespace: blue-green
+    helmValues:
+      blue-green.crds.enabled: "true"
 
