@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-blue
+  labels:
+    app: test-app
+    track: blue
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp
+      track: blue
+  template:
+    metadata:
+      labels:
+        app: myapp
+        track: blue
+    spec:
+      containers:
+      - name: echo
+        image: hashicorp/http-echo:latest
+        args: ["-text", "version: v1"]
+        ports:
+        - containerPort: 5678
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5678
+          initialDelaySeconds: 2
+          periodSeconds: 2
