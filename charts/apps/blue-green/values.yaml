@@ -8,6 +8,8 @@ image:
   repository: gcr.io/google-samples/gb-frontend
   tag: v5
   pullPolicy: IfNotPresent
+  ports:
+containerPort: 80
 
 service:
   type: ClusterIP
