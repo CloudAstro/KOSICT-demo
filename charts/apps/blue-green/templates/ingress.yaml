@@ -1,31 +1,45 @@
 {{- if .Values.ingress.enabled }}
+{{- if .Values.ingress.blue.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "mychart.fullname" . }}
+  name: {{ include "mychart.fullname" . }}-blue
+  namespace: {{ .Release.Namespace }}
   annotations:
-    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
-
-    # Canary (for green service)
-    nginx.ingress.kubernetes.io/canary: "true"
-    nginx.ingress.kubernetes.io/canary-weight: "{{ .Values.ingress.weights.green }}"
+{{ toYaml .Values.ingress.blue.annotations | indent 4 }}
 spec:
   rules:
-    - host: {{ .Values.ingress.host }}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ include "mychart.fullname" . }}-blue
-                port:
-                  number:  {{ .Values.blue.servicePort }}
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ include "mychart.fullname" . }}-green
-                port:
-                  number:  {{ .Values.green.servicePort }}
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: {{ .Values.ingress.blue.path }}
+        pathType: {{ .Values.ingress.blue.pathType }}
+        backend:
+          service:
+            name: {{ include "mychart.fullname" . }}-blue
+            port:
+              number: {{ .Values.blue.servicePort }}
+{{- end }}
+
+{{- if .Values.ingress.green.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "mychart.fullname" . }}-green
+  namespace: {{ .Release.Namespace }}
+  annotations:
+{{ toYaml .Values.ingress.green.annotations | indent 4 }}
+spec:
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: {{ .Values.ingress.green.path }}
+        pathType: {{ .Values.ingress.green.pathType }}
+        backend:
+          service:
+            name: {{ include "mychart.fullname" . }}-green
+            port:
+              number: {{ .Values.green.servicePort }}
+{{- end }}
 {{- end }}
