@@ -1,5 +1,5 @@
 # Number of replicas per deployment
-replicaCount: 2
+replicaCount: 1
 
 fullnameOverride: kosict-demo
 
