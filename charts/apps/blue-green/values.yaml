@@ -20,7 +20,7 @@ blue:
   enabled: true
   image:
     tag: blue             
-  containerPort: 8080    
+  containerPort: 80    
   servicePort: 80  
 
 
@@ -29,20 +29,20 @@ green:
   enabled: true
   image:
     tag: green               
-  containerPort: 9090      
+  containerPort: 80     
   servicePort: 80           
 
 ingress:
   enabled: true
   className: nginx
   host: demo.cloudastro.de
-  # Define two ingress resources: stable (blue) and canary (green)
   blue:
     enabled: true
     annotations:
       kubernetes.io/ingress.class: nginx
     path: /
     pathType: Prefix
+
   green:
     enabled: true
     annotations:
