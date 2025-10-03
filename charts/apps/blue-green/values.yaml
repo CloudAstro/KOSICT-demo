@@ -5,8 +5,8 @@ fullnameOverride: kosict-demo
 
 
 image:
-  repository: myapp         
-  tag: v1                  
+  repository: njomzaismaili/kosict-demo
+  tag: blue          
   pullPolicy: IfNotPresent
 
 
@@ -19,7 +19,7 @@ blue:
   fullnameOverride: kosict-demo
   enabled: true
   image:
-    tag: v1                
+    tag: blue             
   containerPort: 8080    
   servicePort: 80  
 
@@ -28,15 +28,14 @@ green:
   fullnameOverride: kosict-demo
   enabled: true
   image:
-    tag: v2                
+    tag: green               
   containerPort: 9090      
   servicePort: 80           
 
 ingress:
   enabled: true
   className: nginx
-  host: myapp.example.com  
-
+  host: demo.cloudastro.de
   weights:
     blue: 90                
     green: 10              
