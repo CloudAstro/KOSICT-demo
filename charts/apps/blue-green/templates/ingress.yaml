@@ -7,6 +7,7 @@ metadata:
   annotations:
 {{ toYaml .Values.ingress.blue.annotations | indent 4 }}
 spec:
+  ingressClassName: {{ .Values.ingress.className }}
   rules:
   - host: {{ .Values.ingress.host }}
     http:
@@ -30,6 +31,7 @@ metadata:
   annotations:
 {{ toYaml .Values.ingress.green.annotations | indent 4 }}
 spec:
+  ingressClassName: {{ .Values.ingress.className }}
   rules:
   - host: {{ .Values.ingress.host }}
     http:
