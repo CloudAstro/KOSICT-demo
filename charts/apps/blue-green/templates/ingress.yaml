@@ -1,0 +1,47 @@
+{{- if .Values.ingress.enabled }}
+{{- if .Values.ingress.blue.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "mychart.fullname" . }}-blue
+  annotations:
+{{ toYaml .Values.ingress.blue.annotations | indent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: {{ .Values.ingress.blue.path }}
+        pathType: {{ .Values.ingress.blue.pathType }}
+        backend:
+          service:
+            name: {{ include "mychart.fullname" . }}-blue
+            port:
+              number: {{ .Values.blue.servicePort }}
+{{- end }}
+
+---
+
+{{- if .Values.ingress.green.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "mychart.fullname" . }}-green
+  annotations:
+{{ toYaml .Values.ingress.green.annotations | indent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: {{ .Values.ingress.green.path }}
+        pathType: {{ .Values.ingress.green.pathType }}
+        backend:
+          service:
+            name: {{ include "mychart.fullname" . }}-green
+            port:
+              number: {{ .Values.green.servicePort }}
+{{- end }}
+{{- end }}
