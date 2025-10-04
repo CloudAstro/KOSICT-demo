@@ -18,4 +18,4 @@ keywords:
 dependencies:
   - name: openbao
     version: 0.18.2
-    repository: https://github.com/openbao/openbao-helm
+    repository: https://openbao.github.io/openbao-helm

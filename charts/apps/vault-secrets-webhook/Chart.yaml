@@ -1,0 +1,22 @@
+apiVersion: v2
+type: application
+name: vault-secrets-webhook
+version: 0.1.0
+appVersion: v1.22.1
+description: A Kubernetes mutating webhook that makes direct secret injection into Pods possible
+icon: https://avatars.githubusercontent.com/u/129937617
+keywords:
+  - vault
+  - hashicorp
+  - secret
+  - webhook
+home: https://bank-vaults.dev
+sources:
+  - https://github.com/bank-vaults/vault-secrets-webhook
+maintainers:
+  - name: Bank Vaults Maintainers
+    email: team@bank-vaults.dev
+dependencies:
+  - name: vault-secrets-webhook
+    version: 1.22.1
+    repository: oci://ghcr.io/bank-vaults/helm-charts

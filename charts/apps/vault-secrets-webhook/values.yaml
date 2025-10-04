@@ -1,0 +1,118 @@
+vault-secrets-webhook:
+  replicaCount: 2
+  debug: false
+  certificate:
+    useCertManager: false
+    servingCertificate: null
+    generate: true
+    caLifespan: 3650
+    certLifespan: 365
+
+  image:
+    repository: ghcr.io/bank-vaults/vault-secrets-webhook
+    tag: ""
+    pullPolicy: IfNotPresent
+
+  service:
+    name: vault-secrets-webhook
+    type: ClusterIP
+    externalPort: 443
+    internalPort: 8443
+
+  ingress:
+    enabled: false
+  webhookClientConfig:
+    useUrl: false
+
+  vaultEnv:
+    repository: ghcr.io/bank-vaults/vault-env
+    tag: "v1.22.0"
+
+  env:
+    VAULT_IMAGE: hashicorp/vault:1.20.4
+    VAULT_CAPATH: /vault/tls
+    VAULT_CLIENT_TIMEOUT: "10s"
+    VAULT_AUTH_METHOD: "kubernetes"
+    VAULT_PATH: "vault-secrets-webhook"
+    VAULT_ADDR: "SET_BY_ARGOCD"
+    VAULT_ROLE: "vault-secrets-webhook-role"
+    VAULT_ENV_LOG_SERVER: ""
+    VAULT_JSON_LOG: true
+    ENABLE_JSON_LOG: true
+
+  metrics:
+    enabled: false
+    port: 8443
+    serviceMonitor:
+      enabled: false
+      scheme: https
+      tlsConfig:
+        insecureSkipVerify: true
+
+  securityContext:
+    runAsUser: 65534
+    allowPrivilegeEscalation: false
+  livenessProbe:
+    initialDelaySeconds: 30
+    failureThreshold: 3
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+  readinessProbe:
+    failureThreshold: 3
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+
+  rbac:
+    psp:
+      enabled: false
+    authDelegatorRole:
+      enabled: false
+
+  serviceAccount:
+    create: true
+
+  customResourceMutations:
+    - "configmaps"
+    - "secrets"
+    - "pods"
+    - "deployments"
+    - "statefulsets"
+    - "daemonsets"
+    - "jobs"
+    - "cronjobs"
+    - "ingresses"
+    - "services"
+    - "servicemonitors"
+
+  customResourcesFailurePolicy: Ignore
+  configMapMutation: false
+  secretsMutation: true
+
+  configMapFailurePolicy: Ignore
+
+  podsFailurePolicy: Ignore
+
+  secretsFailurePolicy: Ignore
+
+  # -- Webhook sideEffect value
+  # Check: <https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#side-effects>
+  apiSideEffectValue: NoneOnDryRun
+
+  ignoreReleaseNamespace: true
+  namespaceSelector:
+    matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values:
+          - kube-system
+
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+  timeoutSeconds: false
+  hostNetwork: false
+  dnsPolicy: ""
+  kubeVersion: ""
