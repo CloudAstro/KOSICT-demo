@@ -1,7 +1,5 @@
 {{- /*
-ArgoCD Application Template
-Supports ArgoCD 2.x and 3.x with comprehensive configuration options
-Maintains backward compatibility while providing extensive customization
+ArgoCD Application Template - FIXED
 */ -}}
 
 {{- range $chartName, $chartValues := .Values.apps }}
@@ -42,6 +40,8 @@ spec:
   ignoreDifferences:
     {{- toYaml $chartValues.ignoreDifferences | nindent 2 }}
   {{- end }}
+  
+  # FIXED SYNC POLICY SECTION
   {{- if $chartValues.syncPolicy }}
   syncPolicy:
     {{- toYaml $chartValues.syncPolicy | nindent 4 }}
@@ -51,7 +51,6 @@ spec:
       prune: {{ $chartValues.prune | default true }}
       selfHeal: {{ $chartValues.selfHeal | default true }}
       allowEmpty: {{ $chartValues.allowEmpty | default true }}
-    {{- if or $chartValues.syncOptions $chartValues.retry $.Values.global.syncOptions }}
     {{- if $chartValues.retry }}
     retry:
       {{- toYaml $chartValues.retry | nindent 6 }}
@@ -59,15 +58,19 @@ spec:
     syncOptions:
       - CreateNamespace={{ $chartValues.createNamespace | default true }}
       {{- with $.Values.global.syncOptions }}
-      {{- toYaml . | nindent 6 }}
+      {{- range . }}
+      - {{ . }}
+      {{- end }}
       {{- end }}
       {{- with $chartValues.syncOptions }}
-      {{- toYaml . | nindent 6 }}
+      {{- range . }}
+      - {{ . }}
       {{- end }}
-    {{- end }}
+      {{- end }}
   {{- else }}
   syncPolicy: {}
   {{- end }}
+  
   {{- if $chartValues.destination }}
   destination:
     {{- toYaml $chartValues.destination | nindent 4 }}
@@ -76,6 +79,7 @@ spec:
     server: {{ $chartValues.server | default "https://kubernetes.default.svc" }}
     namespace: {{ $chartValues.namespace | required (printf "namespace is required for app: %s" $chartName) }}
   {{- end }}
+  
   {{- if $chartValues.sources }}
   sources:
     {{- toYaml $chartValues.sources | nindent 2 }}
