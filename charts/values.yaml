@@ -18,7 +18,7 @@ apps:
     namespace: openbao
   vault-secrets-webhook:
     enabled: true
-    namespace: vault-secrets-webhook
+    namespace: openbao
     helmValues:
       vault-secrets-webhook.env.VAULT_ADDR: "https://admin.cloudastro.io"
   
