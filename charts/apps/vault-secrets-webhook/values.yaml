@@ -30,12 +30,11 @@ vault-secrets-webhook:
 
   env:
     VAULT_IMAGE: hashicorp/vault:1.20.4
-    VAULT_CAPATH: /vault/tls
     VAULT_CLIENT_TIMEOUT: "10s"
     VAULT_AUTH_METHOD: "kubernetes"
-    VAULT_PATH: "vault-secrets-webhook"
+    VAULT_PATH: "kubernetes"
     VAULT_ADDR: "SET_BY_ARGOCD"
-    VAULT_ROLE: "vault-secrets-webhook-role"
+    VAULT_ROLE: "vault-secrets-webhook"
     VAULT_ENV_LOG_SERVER: ""
     VAULT_JSON_LOG: true
     ENABLE_JSON_LOG: true
@@ -102,12 +101,22 @@ vault-secrets-webhook:
 
   ignoreReleaseNamespace: true
   namespaceSelector:
+    matchLabels:
+        secret-inject: "true"
+
     matchExpressions:
       - key: kubernetes.io/metadata.name
         operator: NotIn
         values:
           - kube-system
-
+      - key: control-plane	
+        operator: NotIn	
+        values:	
+          - 'true'	
+      - key: kubernetes.azure.com/managedby	
+        operator: NotIn	
+        values:	
+          - aks
   podDisruptionBudget:
     enabled: true
     minAvailable: 1
