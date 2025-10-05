@@ -46,8 +46,6 @@ ingress:
     enabled: true
     className: nginx
     annotations:
-      nginx.ingress.kubernetes.io/canary: "true"
-      nginx.ingress.kubernetes.io/canary-weight: "50"
     path: /
     pathType: Prefix
           
