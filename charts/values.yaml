@@ -21,5 +21,7 @@ apps:
     namespace: vault-secrets-webhook
     helmValues:
       vault-secrets-webhook.env.VAULT_ADDR: "https://admin.cloudastro.io"
-  
+  storage-classes:
+    enabled: true
+    namespace: storage-classes  
 

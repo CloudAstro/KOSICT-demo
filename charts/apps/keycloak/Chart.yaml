@@ -1,0 +1,10 @@
+apiVersion: v2
+description: PostgreSQL database crunchydata Operator
+name: postgresql
+version: 0.1.0
+appVersion: "17.0"
+dependencies:
+  - repository: file://../helm-library
+    name: helm-library
+    version: 0.1.0
+

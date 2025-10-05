@@ -1,0 +1,14 @@
+apiVersion: v2
+description: Azure Custom Storage Classes
+name: storage-classes
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - azure
+  - storage
+  - storageclass
+  - pvc
+  - disk
+  - file
+  - blob
+  - nfs

@@ -1,0 +1,7 @@
+{{- if or .Values.operatorResource .Values.operatorResources }}
+{{- if and .Values.operatorResource .Values.operatorResource.enabled }}
+  {{ include "helm-library.operatorResourceFlexible" (dict "root" . "operatorResource" .Values.operatorResource) }}
+{{- else if .Values.operatorResources }}
+  {{ include "helm-library.operatorResources" (dict "root" . "operatorResources" .Values.operatorResources) }}
+{{- end }}
+{{- end }}

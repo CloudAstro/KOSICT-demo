@@ -1,0 +1,95 @@
+storageClasses:
+  # Standard SSD ZRS Storage Class
+  - enabled: true
+    name: "managed-csi-retain"
+    provisioner: "disk.csi.azure.com"
+    parameters:
+      skuname: "StandardSSD_ZRS"
+    reclaimPolicy: "Retain"
+    allowVolumeExpansion: true
+    volumeBindingMode: "WaitForFirstConsumer"
+    isDefault: false
+    labels:
+      storage-type: "ssd"
+      redundancy: "zone-redundant"
+      environment: "production"
+      cost-tier: "standard"
+    annotations:
+      storageclass.kubernetes.io/description: "Standard SSD with Zone Redundant Storage for general workloads"
+      storageclass.kubernetes.io/is-default-class: "false"
+
+  # Premium SSD ZRS Storage Class
+  - enabled: true
+    name: "managed-premium-retain"
+    provisioner: "disk.csi.azure.com"
+    parameters:
+      skuName: "Premium_ZRS"
+    reclaimPolicy: "Retain"
+    allowVolumeExpansion: true
+    volumeBindingMode: "WaitForFirstConsumer"
+    isDefault: false
+    labels:
+      storage-type: "premium-ssd"
+      redundancy: "zone-redundant"
+      environment: "production"
+      cost-tier: "premium"
+      performance: "high"
+    annotations:
+      storageclass.kubernetes.io/description: "Premium SSD with Zone Redundant Storage for high-performance workloads"
+      storageclass.kubernetes.io/is-default-class: "false"
+
+  # Azure Files CSI Storage Class
+  - enabled: true
+    name: "azurefile-csi-retain"
+    provisioner: "file.csi.azure.com"
+    parameters:
+      skuName: "Standard_LRS"
+    reclaimPolicy: "Retain"
+    allowVolumeExpansion: true
+    volumeBindingMode: "Immediate"
+    isDefault: false
+    mountOptions:
+      - "mfsymlinks"
+      - "actimeo=30"
+      - "nosharesock"
+      - "dir_mode=0755"
+      - "file_mode=0755"
+      - "uid=1001"
+      - "gid=1001"
+    labels:
+      storage-type: "file"
+      redundancy: "locally-redundant"
+      environment: "production"
+      cost-tier: "standard"
+      access-mode: "shared"
+    annotations:
+      storageclass.kubernetes.io/description: "Azure Files with Standard LRS for shared storage needs"
+      storageclass.kubernetes.io/is-default-class: "false"
+
+  - enabled: false  # Enable only if ultra performance is required
+    name: "managed-ultra-retain"
+    provisioner: "disk.csi.azure.com"
+    parameters:
+      skuName: "UltraSSD_LRS"
+      cachingmode: "None"  # Ultra SSD doesn't support caching
+      diskIOPSReadWrite: "5000"  # Custom IOPS
+      diskMBpsReadWrite: "200"   # Custom throughput
+    reclaimPolicy: "Retain"
+    allowVolumeExpansion: true
+    volumeBindingMode: "WaitForFirstConsumer"
+    isDefault: false
+    allowedTopologies:
+      - matchLabelExpressions:
+          - key: "topology.disk.csi.azure.com/zone"
+            values: ["germanywestcentral-1", "germanywestcentral-2", "germanywestcentral-3"]
+    labels:
+      storage-type: "ultra-ssd"
+      workload-type: "ultra-performance"
+      redundancy: "locally-redundant"
+      environment: "production"
+      performance: "ultra"
+      cost-tier: "premium"
+    annotations:
+      storageclass.kubernetes.io/description: "Ultra SSD for ultra-high performance workloads (highest cost)"
+      storageclass.kubernetes.io/is-default-class: "false"
+      storageclass.kubernetes.io/beta.kubernetes.io/cost-warning: "Ultra SSD incurs high costs"
