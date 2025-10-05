@@ -1,7 +1,6 @@
 {{- /*
-ArgoCD Application Template - FIXED
+ArgoCD Application Template
 */ -}}
-
 {{- range $chartName, $chartValues := .Values.apps }}
 {{- if ne $chartValues.enabled false }}
 ---
@@ -40,13 +39,44 @@ spec:
   ignoreDifferences:
     {{- toYaml $chartValues.ignoreDifferences | nindent 2 }}
   {{- end }}
-  
-  # FIXED SYNC POLICY SECTION
   {{- if $chartValues.syncPolicy }}
   syncPolicy:
     {{- toYaml $chartValues.syncPolicy | nindent 4 }}
   {{- else if not $chartValues.disableAutoSync }}
   syncPolicy:
+    {{- $namespaceLabels := dict }}
+    {{- $namespaceAnnotations := dict }}
+    {{- if $.Values.global.namespaceLabels }}
+    {{- $namespaceLabels = $.Values.global.namespaceLabels }}
+    {{- end }}
+    {{- if $.Values.global.namespaceAnnotations }}
+    {{- $namespaceAnnotations = $.Values.global.namespaceAnnotations }}
+    {{- end }}
+    {{- if $chartValues.namespaceLabels }}
+    {{- $namespaceLabels = mergeOverwrite $namespaceLabels $chartValues.namespaceLabels }}
+    {{- end }}
+    {{- if $chartValues.namespaceAnnotations }}
+    {{- $namespaceAnnotations = mergeOverwrite $namespaceAnnotations $chartValues.namespaceAnnotations }}
+    {{- end }}
+    {{- if and (not $namespaceLabels) (not $.Values.global.namespaceLabels) (not $chartValues.namespaceLabels) }}
+    {{- $namespaceLabels = dict "secret-inject" "true" }}
+    {{- end }}
+    {{- if or $namespaceLabels $namespaceAnnotations }}
+    managedNamespaceMetadata:
+      {{- if $namespaceLabels }}
+      labels:
+        {{- range $key, $value := $namespaceLabels }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+      {{- end }}
+      {{- if $namespaceAnnotations }}
+      annotations:
+        {{- range $key, $value := $namespaceAnnotations }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+    
     automated:
       prune: {{ $chartValues.prune | default true }}
       selfHeal: {{ $chartValues.selfHeal | default true }}

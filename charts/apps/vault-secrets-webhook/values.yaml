@@ -86,7 +86,7 @@ vault-secrets-webhook:
     - "servicemonitors"
 
   customResourcesFailurePolicy: Ignore
-  configMapMutation: false
+  configMapMutation: true
   secretsMutation: true
 
   configMapFailurePolicy: Ignore
