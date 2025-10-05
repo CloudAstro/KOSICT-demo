@@ -44,10 +44,9 @@ ingress:
     pathType: Prefix
   green:
     enabled: true
-    path: /green
+    path: /
     pathType: Prefix
     annotations:
-     nginx.ingress.kubernetes.io/rewrite-target: /
 
 
 resources:
