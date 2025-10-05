@@ -31,8 +31,8 @@ SA_NAMESPACE=${SA_NAMESPACE:-vault-secrets-webhook}
 read -p "Enable KV store? (y/n) [y]: " ENABLE_KV
 ENABLE_KV=${ENABLE_KV:-y}
 
-read -p "Create test secret? (y/n) [y]: " CREATE_TEST
-CREATE_TEST=${CREATE_TEST:-y}
+read -p "Create db secret? (y/n) [y]: " CREATE_DB_SECRET
+CREATE_DB_SECRET=${CREATE_DB_SECRET:-y}
 
 # Setup
 export BAO_ADDR BAO_TOKEN
@@ -94,11 +94,29 @@ bao write auth/kubernetes/role/vault-secrets-webhook \
     policies=vault-secrets-webhook \
     ttl=1h
 
-# Create test secret
-if [[ $CREATE_TEST == "y" ]]; then
-    bao kv put secret/db username=testuser password=supersecret123
-    echo -e "${GREEN}✅ Test secret created at secret/db${NC}"
+generate_password() {
+    openssl rand -base64 48 | tr -dc 'a-zA-Z0-9' | head -c 32
+}
+
+# Secrets to create with generated passwords
+SECRETS_TO_UPDATE=(
+    "secret/db/gitlab:gitlab"
+    "secret/db/harbor:harbor"
+    "secret/db/keycloak:keycloak"
+)
+
+# Create each secret with a generated password
+if [[ $CREATE_DB_SECRET == "y" ]]; then
+  for entry in "${SECRETS_TO_UPDATE[@]}"; do
+      secret_path="${entry%%:*}"  # Extract path before ':'
+      user="${entry##*:}"         # Extract user after ':'
+      password=$(generate_password)
+      echo -e "${YELLOW}Creating secret ${secret_path} with generated password for user ${user}${NC}"
+      bao kv put "${secret_path}" password="${password}"
+      echo -e "${GREEN}✅ Secret created at ${secret_path}${NC}"
+  done
 fi
+
 
 # Test auth
 echo -e "${YELLOW}Testing authentication...${NC}"

@@ -52,10 +52,6 @@ storageClasses:
       - "mfsymlinks"
       - "actimeo=30"
       - "nosharesock"
-      - "dir_mode=0755"
-      - "file_mode=0755"
-      - "uid=1001"
-      - "gid=1001"
     labels:
       storage-type: "file"
       redundancy: "locally-redundant"
