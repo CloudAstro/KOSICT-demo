@@ -36,19 +36,16 @@ ingress:
   enabled: true
   className: nginx
   host: demo.cloudastro.de
+  canary:
+    weight: 20
   blue:
     enabled: true
-    annotations:
     path: /
     pathType: Prefix
-
   green:
     enabled: true
-    className: nginx
-    annotations:
     path: /
     pathType: Prefix
-          
 
 resources:
   requests:
