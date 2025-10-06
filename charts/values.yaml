@@ -29,6 +29,6 @@ apps:
     enabled: true
     namespace: keycloak
     helmValues:
-      keycloak.auth.adminUser: "admin"
-      keycloak.auth.adminPassword: ${vault:secret/data/keycloak#password}
-      postgres.auth.password: ${vault:secret/data/db/keycloak#password}
+      keycloak.keycloak.adminUser: "admin"
+      keycloak.keycloak.adminPassword: ${vault:secret/data/keycloak#password}
+      keycloak.postgres.auth.password: ${vault:secret/data/db/keycloak#password}
