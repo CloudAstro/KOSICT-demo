@@ -1,20 +1,9 @@
 apiVersion: v2
+description: Keycloak is a high performance Java-based identity and access management solution. It lets developers add an authentication layer to their applications with minimum effort.
 name: keycloak
-description: Open Source Identity and Access Management Solution
-type: application
 version: 0.1.0
-appVersion: "26.3.4"
-keywords:
-  - keycloak
-  - identity
-  - access-management
-  - authentication
-  - authorization
-  - oauth
-  - openid-connect
-  - saml
-icon: https://a.storyblok.com/f/143071/512x512/6a85e594b2/keycloak-logo.svg
+appVersion: 26.3.3
 dependencies:
-  - name: keycloak
-    version: 0.1.11
-    repository: oci://registry-1.docker.io/cloudpirates
+  - repository: oci://registry-1.docker.io/bitnamicharts
+    name: keycloak
+    version: 25.2.0
