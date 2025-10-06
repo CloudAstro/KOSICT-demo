@@ -7,7 +7,7 @@ fullnameOverride: kosict-demo
 image:
   repository: njomzaismaili/kosict-demo
   tag: blue          
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 
 
@@ -28,7 +28,7 @@ green:
   fullnameOverride: kosict-demo
   enabled: true
   image:
-    tag: green               
+    tag: green            
   containerPort: 80     
   servicePort: 80           
 
