@@ -120,10 +120,12 @@ keycloak:
     name: ""
     automountServiceAccountToken: false
 
-  extraEnv: {}
-  # VARNAME1: value1
-  # VARNAME2: value2
-
+  extraEnv:
+    KC_HTTP_MANAGEMENT_PATH: "/management"
+    KC_HTTP_MANAGEMENT_PORT: "9000"
+    KC_MANAGEMENT_ENABLED: "true"
+    QUARKUS_MANAGEMENT_ROOT_PATH: "/"
+    
   extraEnvVarsSecret: ""
 
 postgres:
