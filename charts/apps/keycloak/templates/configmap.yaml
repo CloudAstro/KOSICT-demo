@@ -1,7 +1,0 @@
-{{- if or .Values.configMap .Values.configMaps }}
-{{- if and .Values.configMap .Values.configMap.enabled }}
-  {{ include "helm-library.configMapFlexible" (dict "root" . "configMap" .Values.configMap) }}
-{{- else if .Values.configMaps }}
-  {{ include "helm-library.configMaps" (dict "root" . "configMaps" .Values.configMaps) }}
-{{- end }}
-{{- end }}

@@ -23,5 +23,12 @@ apps:
       vault-secrets-webhook.env.VAULT_ADDR: "https://admin.cloudastro.io"
   storage-classes:
     enabled: true
-    namespace: storage-classes  
+    namespace: storage-classes
 
+  keycloak:
+    enabled: true
+    namespace: keycloak
+    helmValues:
+      keycloak.username: "admin"
+      keycloak.password: ${vault:secret/data/keycloak#password}
+      keycloak.postgres.auth.password: ${vault:secret/data/db/keycloak#password}

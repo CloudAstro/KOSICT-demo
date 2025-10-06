@@ -105,6 +105,8 @@ SECRETS_TO_UPDATE=(
     "secret/db/keycloak:keycloak"
 )
 
+KEYCLOAK_ADMIN_SECRET="secret/keycloak"
+
 # Create each secret with a generated password
 if [[ $CREATE_DB_SECRET == "y" ]]; then
   for entry in "${SECRETS_TO_UPDATE[@]}"; do
@@ -115,6 +117,12 @@ if [[ $CREATE_DB_SECRET == "y" ]]; then
       bao kv put "${secret_path}" password="${password}"
       echo -e "${GREEN}✅ Secret created at ${secret_path}${NC}"
   done
+  admin_username="admin"
+  admin_password=$(generate_password)
+  echo -e "${YELLOW}Creating Keycloak admin secret at ${KEYCLOAK_ADMIN_SECRET}${NC}"
+  bao kv put "${KEYCLOAK_ADMIN_SECRET}" username="${admin_username}" password="${admin_password}"
+  echo -e "${GREEN}✅ Keycloak admin secret created at ${KEYCLOAK_ADMIN_SECRET}${NC}"
+  echo -e "${GREEN}   Username: ${admin_username}${NC}"
 fi
 
 

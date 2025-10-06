@@ -1,7 +1,0 @@
-{{- if or .Values.subscription .Values.subscriptions }}
-{{- if and .Values.subscription .Values.subscription.enabled }}
-  {{ include "helm-library.subscriptionFlexible" (dict "root" . "subscription" .Values.subscription) }}
-{{- else if .Values.subscriptions }}
-  {{ include "helm-library.subscriptions" (dict "root" . "subscriptions" .Values.subscriptions) }}
-{{- end }}
-{{- end }}

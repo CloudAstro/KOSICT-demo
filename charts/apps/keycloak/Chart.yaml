@@ -1,10 +1,27 @@
 apiVersion: v2
-description: PostgreSQL database crunchydata Operator
-name: postgresql
+name: keycloak
+description: Open Source Identity and Access Management Solution
+type: application
 version: 0.1.0
-appVersion: "17.0"
+appVersion: "26.3.4"
+keywords:
+  - keycloak
+  - identity
+  - access-management
+  - authentication
+  - authorization
+  - oauth
+  - openid-connect
+  - saml
+icon: https://a.storyblok.com/f/143071/512x512/6a85e594b2/keycloak-logo.svg
 dependencies:
-  - repository: file://../helm-library
-    name: helm-library
-    version: 0.1.0
-
+  - name: keycloak
+    version: 0.1.11
+    repository: oci://registry-1.docker.io/cloudpirates
+  - name: common
+    version: "1.x.x"
+    repository: oci://registry-1.docker.io/cloudpirates
+  - name: postgres
+    version: "0.7.2"
+    repository: oci://registry-1.docker.io/cloudpirates
+    condition: postgres.enabled

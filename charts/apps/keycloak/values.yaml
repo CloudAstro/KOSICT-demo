@@ -1,113 +1,134 @@
-subscription:
-  enabled: true
-  apiVersion: operators.coreos.com/v1alpha1
-  name: keycloak
-  namespace: keycloak
-  channel: v5
-  source: operatorhubio-catalog
-  sourceNamespace: olm
-  createNamespace: true
-  createOperatorGroup: true
-  targetNamespaces:
-    - "keycloak"
+keycloak:
+  image:
+    registry: docker.io
+    repository: keycloak/keycloak
+    tag: "26.3.4@sha256:2b32a51a31e8d780d9fa9a69a59ead69975263c61b5dd13559090e22aa26f100"
+    imagePullPolicy: Always
+    command: "/opt/keycloak/bin/kc.sh"
 
-operatorResource:
-  enabled: true
-  validateSpec: false
-  strictValidation: false
-  apiVersion: k8s.keycloak.org/v2alpha1
-  kind: Keycloak
-  name: "keycloak"
-  namespace: "keycloak"
-  createNamespace: true
-  spec:
-    instances: 1
-    hostname:
-      hostname: sso.cloudastro.io
-      admin: sso.cloudastro.io/admin
-      strict: false
-      backchannelDynamic: true
-    http:
-      httpEnabled: false
-      httpsPort: 8443
-      tlsSecret: keycloak-tls-secret
+  replicaCount: 1
 
-    db:
-      vendor: postgres
-      host: postgresql.keycloak.svc.cluster.local
-      database: keycloak
-      port: 5432
-      schema: public
-      poolInitialSize: 30
-      poolMinSize: 30
-      poolMaxSize: 50
-      usernameSecret:
-        name: keycloak-db-secret
-        key: username
-      passwordSecret:
-        name: keycloak-db-secret
-        key: password
+  podSecurityContext:
+    fsGroup: 1001
+  securityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    readOnlyRootFilesystem: false
+    capabilities:
+      drop:
+        - ALL
 
-    resources:
-      requests:
-        cpu: 100
-        memory: "100Mi"
-      limits:
-        cpu: "1"
-        memory: "2000Mi"
+  keycloak:
+    adminUser: admin
+    adminPassword: ""
+    hostname: ""
+    hostnameAdmin: ""
+    hostnameStrict: false
+    hostnameBackchannel: ""
+    httpEnabled: true
+    httpPort: 8080
+    httpsPort: 8443
+    proxyHeaders: ""
+    proxyProtocolEnabled: false
+    proxyTrustedAddresses: ""
+    production: true
+    httpRelativePath: ""
 
-    # Production features
-    features:
-      enabled:
-        - multi-site # For cross-datacenter replication
-        - authorization # Fine-grained authorization
-        - account3 # New account console
-        - admin-fine-grained-authz # Admin fine-grained authorization
-        - declarative-user-profile # Declarative user profile
-        - docker # Docker registry authentication
-        - token-exchange # Token exchange
-        - recovery-codes # Account recovery codes
-        - scripts # JavaScript providers
-        - preview # Preview features
-      disabled:
-        - step-up-authentication # Disable if not needed
+  # database:
+  #   type: postgres
+  #   host: ""
+  #   port: ""
+  #   name: keycloak
+  #   username: keycloak
+  #   password: ""
+  #   existingSecret: ""
+  #   secretKeys:
+  #     passwordKey: "db-password"
+  #     usernameKey: "db-username"
+  #   jdbcParams: ""
 
-    # Production optimizations and monitoring
-    additionalOptions:
-      # Logging configuration
-      - name: log-console-output
-        value: json
-      - name: log-level
-        value: INFO
+  cache:
+    stack: local
+    configFile: ""
 
-      # Metrics and monitoring
-      - name: metrics-enabled
-        value: "true"
-      - name: health-enabled
-        value: "true"
-      - name: event-metrics-user-enabled
-        value: "true"
+  service:
+    type: ClusterIP
+    httpPort: 8080
+    httpsPort: 8443
+    httpTargetPort: 8080
+    httpsTargetPort: 8443
 
-      # Performance optimizations
-      - name: cache-stack
-        value: kubernetes
-      - name: proxy-headers
-        value: forwarded|xforwarded
+  ingress:
+    enabled: false
+    className: ""
+    annotations:
+      {}
+    hosts:
+      - host: sso.cloudastro.io
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+    #  - secretName: keycloak-tls
+    #    hosts:
+    #      - sso.cloudastro.io
 
-      # Security settings
-      - name: spi-sticky-session-encoder-infinispan-should-attach-route
-        value: "false"
-      - name: spi-login-recaptcha-site-key
-        secret:
-          name: keycloak-recaptcha-secret
-          key: site-key
-      - name: spi-login-recaptcha-secret-key
-        secret:
-          name: keycloak-recaptcha-secret
-          key: secret-key
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
 
-    transaction:
-      xaEnabled: false
-    update:
-      strategy: Auto
-    startOptimized: true # Use optimized startup for production
+  persistence:
+    enabled: false
+    storageClass: "managed-csi-retain"
+    size: 1Gi
+    accessModes:
+      - ReadWriteOnce
+    existingClaim: ""
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 60
+    successThreshold: 1
+
+  serviceAccount:
+    create: false
+    name: ""
+    automountServiceAccountToken: false
+
+  extraEnv: {}
+  # VARNAME1: value1
+  # VARNAME2: value2
+
+  extraEnvVarsSecret: ""
+
+  postgres:
+    enabled: true
+    auth:
+      database: "keycloak"
+      username: "keycloak"
+      password: "SET_BY_ARGOCD"

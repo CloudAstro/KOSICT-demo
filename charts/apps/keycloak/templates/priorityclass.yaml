@@ -1,7 +1,0 @@
-{{- if or .Values.priorityClass .Values.priorityClasses }}
-{{- if and .Values.priorityClass .Values.priorityClass.enabled }}
-{{ include "helm-library.priorityClassFlexible" (dict "root" . "priorityClass" .Values.priorityClass) }}
-{{- else if .Values.priorityClasses }}
-{{ include "helm-library.priorityClasses" (dict "root" . "priorityClasses" .Values.priorityClasses) }}
-{{- end }}
-{{- end }}
