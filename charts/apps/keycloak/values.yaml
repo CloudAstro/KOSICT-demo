@@ -23,8 +23,8 @@ keycloak:
   keycloak:
     adminUser: admin
     adminPassword: ""
-    hostname: ""
-    hostnameAdmin: ""
+    hostname: "sso.cloudastro.io"
+    hostnameAdmin: "sso.cloudastro.io"
     hostnameStrict: false
     hostnameBackchannel: ""
     httpEnabled: true
@@ -126,9 +126,9 @@ keycloak:
 
   extraEnvVarsSecret: ""
 
-  postgres:
-    enabled: true
-    auth:
-      database: "keycloak"
-      username: "keycloak"
-      password: "SET_BY_ARGOCD"
+postgres:
+  enabled: true
+  auth:
+    database: "keycloak"
+    username: "keycloak"
+    password: "SET_BY_ARGOCD"
