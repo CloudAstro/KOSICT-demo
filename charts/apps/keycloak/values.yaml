@@ -121,9 +121,7 @@ keycloak:
     automountServiceAccountToken: false
 
   extraEnv:
-    KC_HTTP_MANAGEMENT_ENABLED: "true"
-    KC_HTTP_MANAGEMENT_PORT: "9000"  
-    KC_HTTP_MANAGEMENT_PATH: "/" 
+    QUARKUS_MANAGEMENT_ENABLED: "false"
 
   extraEnvVarsSecret: ""
 
