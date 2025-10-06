@@ -1,133 +1,133 @@
-keycloak:
-  image:
-    registry: docker.io
-    repository: keycloak/keycloak
-    tag: "26.3.4@sha256:2b32a51a31e8d780d9fa9a69a59ead69975263c61b5dd13559090e22aa26f100"
-    imagePullPolicy: Always
-    command: "/opt/keycloak/bin/kc.sh"
+# keycloak:
+#   image:
+#     registry: docker.io
+#     repository: keycloak/keycloak
+#     tag: "26.3.4@sha256:2b32a51a31e8d780d9fa9a69a59ead69975263c61b5dd13559090e22aa26f100"
+#     imagePullPolicy: Always
+#     command: "/opt/keycloak/bin/kc.sh"
 
-  replicaCount: 1
+#   replicaCount: 1
 
-  podSecurityContext:
-    fsGroup: 1001
-  securityContext:
-    allowPrivilegeEscalation: false
-    runAsNonRoot: true
-    runAsUser: 1001
-    runAsGroup: 1001
-    readOnlyRootFilesystem: false
-    capabilities:
-      drop:
-        - ALL
+#   podSecurityContext:
+#     fsGroup: 1001
+#   securityContext:
+#     allowPrivilegeEscalation: false
+#     runAsNonRoot: true
+#     runAsUser: 1001
+#     runAsGroup: 1001
+#     readOnlyRootFilesystem: false
+#     capabilities:
+#       drop:
+#         - ALL
 
-  keycloak:
-    adminUser: admin
-    adminPassword: ""
-    hostname: "sso.cloudastro.io"
-    hostnameAdmin: "sso.cloudastro.io"
-    hostnameStrict: false
-    hostnameBackchannel: ""
-    httpEnabled: true
-    httpPort: 8080
-    httpsPort: 8443
-    proxyHeaders: ""
-    proxyProtocolEnabled: false
-    proxyTrustedAddresses: ""
-    production: true
-    httpRelativePath: ""
+#   keycloak:
+#     adminUser: admin
+#     adminPassword: ""
+#     hostname: "sso.cloudastro.io"
+#     hostnameAdmin: "sso.cloudastro.io"
+#     hostnameStrict: false
+#     hostnameBackchannel: ""
+#     httpEnabled: true
+#     httpPort: 8080
+#     httpsPort: 8443
+#     proxyHeaders: ""
+#     proxyProtocolEnabled: false
+#     proxyTrustedAddresses: ""
+#     production: true
+#     httpRelativePath: ""
 
-  # database:
-  #   type: postgres
-  #   host: ""
-  #   port: ""
-  #   name: keycloak
-  #   username: keycloak
-  #   password: ""
-  #   existingSecret: ""
-  #   secretKeys:
-  #     passwordKey: "db-password"
-  #     usernameKey: "db-username"
-  #   jdbcParams: ""
+#   # database:
+#   #   type: postgres
+#   #   host: ""
+#   #   port: ""
+#   #   name: keycloak
+#   #   username: keycloak
+#   #   password: ""
+#   #   existingSecret: ""
+#   #   secretKeys:
+#   #     passwordKey: "db-password"
+#   #     usernameKey: "db-username"
+#   #   jdbcParams: ""
 
-  cache:
-    stack: local
-    configFile: ""
+#   cache:
+#     stack: local
+#     configFile: ""
 
-  service:
-    type: ClusterIP
-    httpPort: 8080
-    httpsPort: 8443
-    httpTargetPort: 8080
-    httpsTargetPort: 8443
+#   service:
+#     type: ClusterIP
+#     httpPort: 8080
+#     httpsPort: 8443
+#     httpTargetPort: 8080
+#     httpsTargetPort: 8443
 
-  ingress:
-    enabled: false
-    className: ""
-    annotations:
-      {}
-    hosts:
-      - host: sso.cloudastro.io
-        paths:
-          - path: /
-            pathType: Prefix
-    tls: []
-    #  - secretName: keycloak-tls
-    #    hosts:
-    #      - sso.cloudastro.io
+#   ingress:
+#     enabled: false
+#     className: ""
+#     annotations:
+#       {}
+#     hosts:
+#       - host: sso.cloudastro.io
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#     tls: []
+#     #  - secretName: keycloak-tls
+#     #    hosts:
+#     #      - sso.cloudastro.io
 
-  resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 250m
-      memory: 256Mi
+#   resources:
+#     limits:
+#       cpu: 500m
+#       memory: 512Mi
+#     requests:
+#       cpu: 250m
+#       memory: 256Mi
 
-  persistence:
-    enabled: false
-    storageClass: "managed-csi-retain"
-    size: 1Gi
-    accessModes:
-      - ReadWriteOnce
-    existingClaim: ""
+#   persistence:
+#     enabled: false
+#     storageClass: "managed-csi-retain"
+#     size: 1Gi
+#     accessModes:
+#       - ReadWriteOnce
+#     existingClaim: ""
 
-  livenessProbe:
-    enabled: true
-    initialDelaySeconds: 60
-    periodSeconds: 30
-    timeoutSeconds: 5
-    failureThreshold: 3
-    successThreshold: 1
+#   livenessProbe:
+#     enabled: true
+#     initialDelaySeconds: 60
+#     periodSeconds: 30
+#     timeoutSeconds: 5
+#     failureThreshold: 3
+#     successThreshold: 1
 
-  readinessProbe:
-    enabled: true
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 3
-    successThreshold: 1
+#   readinessProbe:
+#     enabled: true
+#     initialDelaySeconds: 30
+#     periodSeconds: 10
+#     timeoutSeconds: 5
+#     failureThreshold: 3
+#     successThreshold: 1
 
-  startupProbe:
-    enabled: true
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 60
-    successThreshold: 1
+#   startupProbe:
+#     enabled: true
+#     initialDelaySeconds: 30
+#     periodSeconds: 10
+#     timeoutSeconds: 5
+#     failureThreshold: 60
+#     successThreshold: 1
 
-  serviceAccount:
-    create: false
-    name: ""
-    automountServiceAccountToken: false
+#   serviceAccount:
+#     create: false
+#     name: ""
+#     automountServiceAccountToken: false
 
-  extraEnv:
-    KC_DB_USERNAME: "keycloak"
+#   extraEnv:
+#     KC_DB_USERNAME: "keycloak"
 
-  extraEnvVarsSecret: ""
+#   extraEnvVarsSecret: ""
 
-postgres:
-  enabled: true
-  auth:
-    database: "keycloak"
-    username: "keycloak"
-    password: "SET_BY_ARGOCD"
+# postgres:
+#   enabled: true
+#   auth:
+#     database: "keycloak"
+#     username: "keycloak"
+#     password: "SET_BY_ARGOCD"
