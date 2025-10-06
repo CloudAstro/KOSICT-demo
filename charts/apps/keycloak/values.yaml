@@ -121,11 +121,10 @@ keycloak:
     automountServiceAccountToken: false
 
   extraEnv:
-    KC_HTTP_MANAGEMENT_PATH: "/management"
-    KC_HTTP_MANAGEMENT_PORT: "9000"
-    KC_MANAGEMENT_ENABLED: "true"
-    QUARKUS_MANAGEMENT_ROOT_PATH: "/"
-    
+    KC_HTTP_MANAGEMENT_ENABLED: "true"
+    KC_HTTP_MANAGEMENT_PORT: "9000"  
+    KC_HTTP_MANAGEMENT_PATH: "/" 
+
   extraEnvVarsSecret: ""
 
 postgres:
