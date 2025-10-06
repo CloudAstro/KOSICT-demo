@@ -121,7 +121,7 @@ keycloak:
     automountServiceAccountToken: false
 
   extraEnv:
-    QUARKUS_MANAGEMENT_ENABLED: "false"
+    KC_DB_USERNAME: "keycloak"
 
   extraEnvVarsSecret: ""
 
