@@ -24,11 +24,6 @@ apps:
   storage-classes:
     enabled: true
     namespace: storage-classes
-
-  keycloak:
+  ingress-nginx:
     enabled: true
-    namespace: keycloak
-    helmValues:
-      keycloak.auth.adminUser: "admin"
-      keycloak.auth.adminPassword: ${vault:secret/data/keycloak#password}
-      keycloak.postgres.auth.password: ${vault:secret/data/db/keycloak#password}
+    namespace: ingress-nginx
