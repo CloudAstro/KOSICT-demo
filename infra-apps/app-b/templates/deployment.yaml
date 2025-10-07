@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app-b.fullname" . }}
+  labels:
+    {{- include "app-b.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "app-b.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "app-b.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: redis
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - redis-server
+          - --maxmemory
+          - {{ .Values.redis.maxmemory | quote }}
+          - --maxmemory-policy
+          - {{ .Values.redis.maxmemoryPolicy | quote }}
+          {{- if .Values.redis.password }}
+          - --requirepass
+          - {{ .Values.redis.password | quote }}
+          {{- end }}
+        ports:
+        - name: redis
+          containerPort: 6379
+          protocol: TCP
+        livenessProbe:
+          tcpSocket:
+            port: redis
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}

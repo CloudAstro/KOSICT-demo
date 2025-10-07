@@ -1,3 +1,5 @@
 charts/**/charts
 charts/**/Chart.lock
 .DS_Store
+init.sh
+init2.sh

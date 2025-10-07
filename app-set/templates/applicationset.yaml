@@ -1,0 +1,68 @@
+{{- if .Values.applicationset.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: {{ .Values.applicationset.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  goTemplate: {{ .Values.applicationset.goTemplate | default true }}
+  {{- with .Values.applicationset.goTemplateOptions }}
+  goTemplateOptions:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  
+  {{- with .Values.applicationset.syncPolicy }}
+  syncPolicy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  
+  generators:
+    {{- range .Values.applicationset.generators }}
+    - {{- toYaml . | nindent 6 }}
+    {{- end }}
+  
+  template:
+    metadata:
+      name: {{ .Values.applicationset.template.metadata.name | quote }}
+      {{- with .Values.applicationset.template.metadata.labels }}
+      labels:
+        {{- range $key, $value := . }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.applicationset.template.metadata.finalizers }}
+      finalizers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    
+    spec:
+      project: {{ .Values.applicationset.template.spec.project | quote }}
+      revisionHistoryLimit: {{ .Values.applicationset.template.spec.revisionHistoryLimit | default 3 }}
+      
+      {{- with .Values.applicationset.template.spec.sources }}
+      sources:
+        {{- range . }}
+        - repoURL: {{ .repoURL | quote }}
+          targetRevision: {{ .targetRevision | quote }}
+          {{- if .path }}
+          path: {{ .path | quote }}
+          {{- end }}
+          {{- if .ref }}
+          ref: {{ .ref }}
+          {{- end }}
+          {{- with .helm }}
+          helm:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      
+      destination:
+        server: {{ .Values.applicationset.template.spec.destination.server | quote }}
+        namespace: {{ .Values.applicationset.template.spec.destination.namespace | quote }}
+      
+      {{- with .Values.applicationset.template.spec.syncPolicy }}
+      syncPolicy:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

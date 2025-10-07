@@ -1,0 +1,6 @@
+apiVersion: v2
+name: app-set
+description: ApplicationSet for multi-environment application deployment
+type: application
+version: 1.0.0
+appVersion: "1.0"

@@ -1,27 +1,25 @@
-# Default values for sample-app.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
-replicaCount: 2
+replicaCount: 1
 
 image:
-  repository: amralaayassen/helm-app
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "staging"
+  tag: "1.27.0-alpine"
+  pullPolicy: Always
 
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+html:
+  content: "app-a-dev"
 
-service:
-  type: NodePort
-  port: 30008
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
 
-
-## Application level settings  
-appMode: staging
-certificatePath: /etc/ssl/staging
-paypalURLLocation: https://staging.paypal.example.com
-databaseUser: staging-user
-databasePassword: staging-password
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: app-a-dev.example.com
+      paths:
+        - path: /
+          pathType: Prefix

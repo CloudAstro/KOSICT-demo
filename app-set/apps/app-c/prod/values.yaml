@@ -1,27 +1,22 @@
-# Default values for sample-app.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
-replicaCount: 3
+replicaCount: 1
 
 image:
-  repository: amralaayassen/helm-app
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "prod"
+  tag: "16.0"
 
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+postgresql:
+  database: "myapp_prod"
+  username: "postgres"
+  password: "changeme-use-sealed-secrets"
 
-service:
-  type: NodePort
-  port: 30009
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 2Gi
 
-
-## Application level settings  
-appMode: production
-certificatePath: /etc/ssl/prod
-paypalURLLocation: https://prod.paypal.example.com
-databaseUser: prod-user
-databasePassword: prod-password
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
