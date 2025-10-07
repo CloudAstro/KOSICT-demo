@@ -1,0 +1,6 @@
+dependencies:
+- name: vault-secrets-webhook
+  repository: oci://ghcr.io/bank-vaults/helm-charts
+  version: 1.22.1
+digest: sha256:4081f86d0fb641e3a4fc6b63f28432c6a338cabc9cbec9fd812d28a1afa14449
+generated: "2025-10-04T22:03:50.291954+03:00"

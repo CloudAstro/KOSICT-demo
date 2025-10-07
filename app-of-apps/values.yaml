@@ -2,7 +2,7 @@ global:
   env: dev
   projectName: kosict
   source:
-    appsBasePath: "charts/apps"
+    appsBasePath: "app-of-apps/apps"
     repoURL: "https://github.com/CloudAstro/KOSICT-demo.git"
     targetRevision: main
 
