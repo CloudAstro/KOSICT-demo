@@ -1,0 +1,6 @@
+namespaces:
+  - prod
+  - qa
+  - dev
+
+name: app-a
