@@ -44,7 +44,7 @@ spec:
             valueFiles:
               - values.yaml
               - {{ `$values/app-set/apps/` }}{{ $appName }}/{{ `{{.env}}` }}/values.yaml
-            values: |
+            parameters: |
               {{ `{{- with .helmValues }}` }}
               {{ `{{- toYaml . }}` }}
               {{ `{{- end }}` }}
