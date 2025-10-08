@@ -1,0 +1,69 @@
+# Number of replicas per deployment
+replicaCount: 1
+
+fullnameOverride: kosict-demo
+
+
+image:
+  repository: njomzaismaili/kosict-demo
+  tag: blue          
+  pullPolicy: Always
+
+
+
+service:
+  port: 80                  
+
+
+stable:
+  fullnameOverride: kosict-demo
+  enabled: true
+  image:
+    tag: blue             
+  containerPort: 80    
+  servicePort: 80  
+
+
+canary:
+  fullnameOverride: kosict-demo
+  enabled: true
+  image:
+    tag: green            
+  containerPort: 80     
+  servicePort: 80           
+
+ingress:
+  enabled: true
+  className: nginx
+  host: demo.cloudastro.de
+  Canary:
+    weight: 20
+  stable:
+    enabled: true
+    path: /
+    pathType: Prefix
+  canary:
+    enabled: true
+    path: /
+    pathType: Prefix
+    annotations:
+
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+env: []
+# Example:
+# env:
+#   - name: ENVIRONMENT
+#     value: "production"
+
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

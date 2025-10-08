@@ -1,0 +1,37 @@
+{{- if .Values.stable.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mychart.fullname" . }}-stable
+  labels:
+    app: {{ include "mychart.name" . }}
+    track: stable
+spec:
+  ports:
+    - port: {{ .Values.stable.servicePort }}  
+      targetPort: {{ .Values.stable.containerPort }} 
+      protocol: TCP
+  selector:
+    app: {{ include "mychart.name" . }}
+    track: stable
+{{- end }}
+
+---
+
+{{- if .Values.canary.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mychart.fullname" . }}-canary
+  labels:
+    app: {{ include "mychart.name" . }}
+    track: canary
+spec:
+  ports:
+    - port: {{ .Values.canary.servicePort }}  
+      targetPort: {{ .Values.canary.containerPort }}
+      protocol: TCP
+  selector:
+    app: {{ include "mychart.name" . }}
+    track: canary
+{{- end }}
