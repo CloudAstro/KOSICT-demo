@@ -81,3 +81,4 @@ apps:
       helmValues:
     prod:
       helmValues:
+        postgresql.password: vault:secret/data/kosict/app-c/prod#password
