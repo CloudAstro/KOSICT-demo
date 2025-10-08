@@ -4,5 +4,5 @@ metadata:
   name: db-secret
 type: Opaque
 stringData:
-  pass: ${vault:secret/data/db#password}
-  user: ${vault:secret/data/db#username}
+  pass: ${vault:secret/data/db/keycloak#password}
+  user: ${vault:secret/data/db/keycloak#username}

@@ -1,3 +1,6 @@
+{{- /*
+ArgoCD ApplicationSet Template
+*/ -}}
 {{- range $appName, $appConfig := .Values.apps }}
 {{- if $appConfig.enabled }}
 ---
@@ -6,17 +9,34 @@ kind: ApplicationSet
 metadata:
   name: {{ $appName }}
   namespace: {{ $.Release.Namespace }}
+  {{- with $appConfig.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if $appConfig.annotations }}
+  annotations:
+    {{- toYaml $appConfig.annotations | nindent 4 }}
+  {{- end }}
 spec:
   goTemplate: true
   goTemplateOptions:
-    - missingkey=error
+    - missingkey=zero
+  
   syncPolicy:
-    preserveResourcesOnDeletion: true
+    preserveResourcesOnDeletion: {{ $appConfig.preserveResourcesOnDeletion | default true }}
+    {{- if $appConfig.applicationsSync }}
+    applicationsSync: {{ $appConfig.applicationsSync }}
+    {{- end }}
+  
   generators:
     - list:
         elements:
-          {{- range $envName, $envConfig := (omit $appConfig "enabled" "syncPolicy" "revisionHistoryLimit") }}
+          {{- $excludeKeys := list "enabled" "syncPolicy" "applicationSyncPolicy" "revisionHistoryLimit" "labels" "annotations" "ignoreDifferences" "info" "namespaceLabels" "namespaceAnnotations" "project" "prune" "selfHeal" "allowEmpty" "createNamespace" "retry" "syncOptions" "disableAutoSync" "chartPath" "repoURL" "targetRevision" "releaseName" "skipCrds" "passCredentials" "additionalValueFiles" "values" "fileParameters" "ignoreMissingValueFiles" "valuesRepoURL" "valuesTargetRevision" "forceString" "preserveResourcesOnDeletion" "applicationsSync" "finalizers" }}
+          {{- range $envName, $envConfig := $appConfig }}
+          {{- if not (has $envName $excludeKeys) }}
           - env: {{ $envName | quote }}
+            server: {{ $envConfig.server | default "https://kubernetes.default.svc" | quote }}
+            namespace: {{ $envConfig.namespace | default (printf "%s-%s" $appName $envName) | quote }}
             {{- if $envConfig.helmValues }}
             helmValues:
               {{- range $name, $value := $envConfig.helmValues }}
@@ -27,75 +47,180 @@ spec:
             helmValues: []
             {{- end }}
           {{- end }}
+          {{- end }}
+  
   template:
     metadata:
       name: '{{ $appName }}-{{ `{{.env}}` }}'
       labels:
         app: {{ $appName | quote }}
         environment: '{{ `{{.env}}` }}'
+        {{- if $appConfig.labels }}
+        {{- range $key, $value := $appConfig.labels }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+      {{- if or $appConfig.finalizers (not (hasKey $appConfig "finalizers")) }}
       finalizers:
+        {{- if $appConfig.finalizers }}
+        {{- toYaml $appConfig.finalizers | nindent 8 }}
+        {{- else }}
         - resources-finalizer.argocd.argoproj.io
-    spec:
-      project: {{ $appName | quote }}
-      revisionHistoryLimit: {{ $appConfig.revisionHistoryLimit | default 3 }}
-      sources:
-        - repoURL: {{ $.Values.global.source.repoURL | quote }}
-          targetRevision: {{ $.Values.global.source.targetRevision | quote }}
-          path: 'infra-charts/{{ $appName }}'
-          helm:
-            releaseName: {{ $appName | quote }}
-            valueFiles:
-              - values.yaml
-              - {{ `$values/app-set/apps/` }}{{ $appName }}/{{ `{{.env}}` }}/values.yaml
-        - repoURL: {{ $.Values.global.source.repoURL | quote }}
-          targetRevision: {{ $.Values.global.source.targetRevision | quote }}
-          ref: values
-      destination:
-        server: https://kubernetes.default.svc
-        namespace: '{{ $appName }}-{{ `{{.env}}` }}'
-      {{- if $appConfig.syncPolicy }}
-      syncPolicy:
-        {{- if $appConfig.syncPolicy.automated }}
-        automated:
-          prune: {{ $appConfig.syncPolicy.automated.prune | default true }}
-          selfHeal: {{ $appConfig.syncPolicy.automated.selfHeal | default true }}
-          allowEmpty: {{ $appConfig.syncPolicy.automated.allowEmpty | default true }}
-        {{- end }}
-        {{- if $appConfig.syncPolicy.syncOptions }}
-        syncOptions:
-          {{- toYaml $appConfig.syncPolicy.syncOptions | nindent 10 }}
-        {{- end }}
-        {{- if $appConfig.syncPolicy.retry }}
-        retry:
-          limit: {{ $appConfig.syncPolicy.retry.limit | default 5 }}
-          {{- if $appConfig.syncPolicy.retry.backoff }}
-          backoff:
-            duration: {{ $appConfig.syncPolicy.retry.backoff.duration | default "5s" }}
-            factor: {{ $appConfig.syncPolicy.retry.backoff.factor | default 2 }}
-            maxDuration: {{ $appConfig.syncPolicy.retry.backoff.maxDuration | default "3m" }}
-          {{- end }}
         {{- end }}
       {{- end }}
+      {{- if $appConfig.annotations }}
+      annotations:
+        {{- toYaml $appConfig.annotations | nindent 8 }}
+      {{- end }}
+    
+    spec:
+      project: {{ $appConfig.project | default $.Values.global.projectName | default $appName }}
+      revisionHistoryLimit: {{ $appConfig.revisionHistoryLimit | default 3 }}
+      
+      {{- if $appConfig.info }}
+      info:
+        {{- toYaml $appConfig.info | nindent 8 }}
+      {{- end }}
+      
+      {{- if $appConfig.ignoreDifferences }}
+      ignoreDifferences:
+        {{- toYaml $appConfig.ignoreDifferences | nindent 8 }}
+      {{- end }}
+      
+      destination:
+        server: '{{ `{{.server}}` }}'
+        namespace: '{{ `{{.namespace}}` }}'
+      
+      {{- if $appConfig.applicationSyncPolicy }}
+      syncPolicy:
+        {{- toYaml $appConfig.applicationSyncPolicy | nindent 8 }}
+      {{- else if not $appConfig.disableAutoSync }}
+      syncPolicy:
+        {{- $namespaceLabels := dict }}
+        {{- $namespaceAnnotations := dict }}
+        {{- if $.Values.global.namespaceLabels }}
+        {{- $namespaceLabels = $.Values.global.namespaceLabels }}
+        {{- end }}
+        {{- if $.Values.global.namespaceAnnotations }}
+        {{- $namespaceAnnotations = $.Values.global.namespaceAnnotations }}
+        {{- end }}
+        {{- if $appConfig.namespaceLabels }}
+        {{- $namespaceLabels = mergeOverwrite $namespaceLabels $appConfig.namespaceLabels }}
+        {{- end }}
+        {{- if $appConfig.namespaceAnnotations }}
+        {{- $namespaceAnnotations = mergeOverwrite $namespaceAnnotations $appConfig.namespaceAnnotations }}
+        {{- end }}
+        {{- if and (not $namespaceLabels) (not $.Values.global.namespaceLabels) (not $appConfig.namespaceLabels) }}
+        {{- $namespaceLabels = dict "secret-inject" "true" }}
+        {{- end }}
+        {{- if or $namespaceLabels $namespaceAnnotations }}
+        managedNamespaceMetadata:
+          {{- if $namespaceLabels }}
+          labels:
+            {{- range $key, $value := $namespaceLabels }}
+            {{ $key }}: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+          {{- if $namespaceAnnotations }}
+          annotations:
+            {{- range $key, $value := $namespaceAnnotations }}
+            {{ $key }}: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        automated:
+          prune: {{ $appConfig.prune | default true }}
+          selfHeal: {{ $appConfig.selfHeal | default true }}
+          allowEmpty: {{ $appConfig.allowEmpty | default true }}
+        {{- if $appConfig.retry }}
+        retry:
+          {{- toYaml $appConfig.retry | nindent 10 }}
+        {{- end }}
+        syncOptions:
+          - CreateNamespace={{ $appConfig.createNamespace | default true }}
+          {{- if $.Values.global.syncOptions }}
+          {{- range $.Values.global.syncOptions }}
+          - {{ . }}
+          {{- end }}
+          {{- end }}
+          {{- if $appConfig.syncOptions }}
+          {{- range $appConfig.syncOptions }}
+          - {{ . }}
+          {{- end }}
+          {{- end }}
+      {{- end }}
+      
+      sources:
+        - repoURL: {{ $appConfig.repoURL | default $.Values.global.source.repoURL | quote }}
+          targetRevision: {{ $appConfig.targetRevision | default $.Values.global.source.targetRevision | quote }}
+          path: {{ $appConfig.chartPath | default (printf "infra-charts/%s" $appName) | quote }}
+          helm:
+            releaseName: {{ $appConfig.releaseName | default $appName | quote }}
+            {{- if hasKey $appConfig "skipCrds" }}
+            skipCrds: {{ $appConfig.skipCrds }}
+            {{- end }}
+            {{- if hasKey $appConfig "passCredentials" }}
+            passCredentials: {{ $appConfig.passCredentials }}
+            {{- else }}
+            passCredentials: true
+            {{- end }}
+            valueFiles:
+              - values.yaml
+              {{- if $appConfig.additionalValueFiles }}
+              {{- range $appConfig.additionalValueFiles }}
+              - {{ . }}
+              {{- end }}
+              {{- end }}
+              - {{ `$values/app-set/apps/` }}{{ $appName }}/{{ `{{.env}}` }}/values.yaml
+            {{- if $appConfig.values }}
+            values: |
+              {{- include "tpl-values" (dict "values" $appConfig.values "context" $) | nindent 14 }}
+            {{- end }}
+            {{- if $appConfig.fileParameters }}
+            fileParameters:
+              {{- toYaml $appConfig.fileParameters | nindent 14 }}
+            {{- end }}
+            {{- if hasKey $appConfig "ignoreMissingValueFiles" }}
+            ignoreMissingValueFiles: {{ $appConfig.ignoreMissingValueFiles }}
+            {{- end }}
+        - repoURL: {{ $appConfig.valuesRepoURL | default $.Values.global.source.repoURL | quote }}
+          targetRevision: {{ $appConfig.valuesTargetRevision | default $.Values.global.source.targetRevision | quote }}
+          ref: values
+  
   templatePatch: |
     {{`{{- if .helmValues }}`}}
     spec:
       sources:
-        - repoURL: {{ $.Values.global.source.repoURL | quote }}
-          targetRevision: {{ $.Values.global.source.targetRevision | quote }}
-          path: 'infra-charts/{{ $appName }}'
+        - repoURL: {{ $appConfig.repoURL | default $.Values.global.source.repoURL | quote }}
+          targetRevision: {{ $appConfig.targetRevision | default $.Values.global.source.targetRevision | quote }}
+          path: {{ $appConfig.chartPath | default (printf "infra-charts/%s" $appName) | quote }}
           helm:
-            releaseName: {{ $appName | quote }}
+            releaseName: {{ $appConfig.releaseName | default $appName | quote }}
+            {{- if hasKey $appConfig "passCredentials" }}
+            passCredentials: {{ $appConfig.passCredentials }}
+            {{- else }}
+            passCredentials: true
+            {{- end }}
             valueFiles:
               - values.yaml
+              {{- if $appConfig.additionalValueFiles }}
+              {{- range $appConfig.additionalValueFiles }}
+              - {{ . }}
+              {{- end }}
+              {{- end }}
               - $values/app-set/apps/{{ $appName }}/{{`{{.env}}`}}/values.yaml
             parameters:
             {{`{{- range $param := .helmValues }}`}}
             - name: {{`{{ $param.name | quote }}`}}
               value: {{`{{ $param.value | quote }}`}}
-              forceString: true
+              forceString: {{ $appConfig.forceString | default true }}
             {{`{{- end }}`}}
-        - repoURL: {{ $.Values.global.source.repoURL | quote }}
-          targetRevision: {{ $.Values.global.source.targetRevision | quote }}
+            {{- if $appConfig.values }}
+            values: |
+              {{- include "tpl-values" (dict "values" $appConfig.values "context" $) | nindent 14 }}
+            {{- end }}
+        - repoURL: {{ $appConfig.valuesRepoURL | default $.Values.global.source.repoURL | quote }}
+          targetRevision: {{ $appConfig.valuesTargetRevision | default $.Values.global.source.targetRevision | quote }}
           ref: values
     {{`{{- end }}`}}
 

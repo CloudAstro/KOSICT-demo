@@ -4,6 +4,8 @@ global:
   source:
     repoURL: "https://github.com/CloudAstro/KOSICT-demo.git"
     targetRevision: main
+  namespaceLabels:
+    secret-inject: "true"
 
 apps:
   app-a:
