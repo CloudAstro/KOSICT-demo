@@ -82,9 +82,50 @@ spec:
         {{- toYaml $appConfig.info | nindent 8 }}
       {{- end }}
       
-      {{- if $appConfig.ignoreDifferences }}
+      {{- if or $appConfig.ignoreDifferences $.Values.global.ignoreDifferences }}
       ignoreDifferences:
+        {{- if $.Values.global.ignoreDifferences }}
+        {{- toYaml $.Values.global.ignoreDifferences | nindent 8 }}
+        {{- end }}
+        {{- if $appConfig.ignoreDifferences }}
         {{- toYaml $appConfig.ignoreDifferences | nindent 8 }}
+        {{- end }}
+      {{- else }}
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jqPathExpressions:
+            - '.spec.template.spec.containers[].env[]? | select(.value? | strings | startswith("vault:"))'
+            - '.spec.template.spec.initContainers[].env[]? | select(.value? | strings | startswith("vault:"))'
+        - group: apps
+          kind: StatefulSet
+          jqPathExpressions:
+            - '.spec.template.spec.containers[].env[]? | select(.value? | strings | startswith("vault:"))'
+            - '.spec.template.spec.initContainers[].env[]? | select(.value? | strings | startswith("vault:"))'
+        - group: apps
+          kind: DaemonSet
+          jqPathExpressions:
+            - '.spec.template.spec.containers[].env[]? | select(.value? | strings | startswith("vault:"))'
+            - '.spec.template.spec.initContainers[].env[]? | select(.value? | strings | startswith("vault:"))'
+        - group: batch
+          kind: Job
+          jqPathExpressions:
+            - '.spec.template.spec.containers[].env[]? | select(.value? | strings | startswith("vault:"))'
+            - '.spec.template.spec.initContainers[].env[]? | select(.value? | strings | startswith("vault:"))'
+        - group: batch
+          kind: CronJob
+          jqPathExpressions:
+            - '.spec.jobTemplate.spec.template.spec.containers[].env[]? | select(.value? | strings | startswith("vault:"))'
+            - '.spec.jobTemplate.spec.template.spec.initContainers[].env[]? | select(.value? | strings | startswith("vault:"))'
+        - group: ""
+          kind: Secret
+          jqPathExpressions:
+            - '.data | to_entries[]? | select(.value | @base64d | startswith("vault:") or startswith(">>vault:"))'
+            - '.stringData | to_entries[]? | select(.value | strings | startswith("vault:") or startswith(">>vault:"))'
+        - group: ""
+          kind: ConfigMap
+          jqPathExpressions:
+            - '.data | to_entries[]? | select(.value | strings | startswith("vault:") or startswith(">>vault:"))'
       {{- end }}
       
       destination:
