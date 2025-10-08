@@ -20,7 +20,7 @@ apps:
     enabled: true
     namespace: vault-secrets-webhook
     helmValues:
-      vault-secrets-webhook.env.VAULT_ADDR: "https://admin.cloudastro.io"
+      vault-secrets-webhook.env.VAULT_ADDR: "http://openbao.openbao.svc:8200"
   storage-classes:
     enabled: true
     namespace: storage-classes
