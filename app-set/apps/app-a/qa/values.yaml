@@ -1,8 +1,5 @@
-replicaCount: 2
-
 image:
   tag: "1.27.0-alpine"
-  pullPolicy: IfNotPresent
 
 html:
   content: "app-a-qa"
@@ -17,7 +14,6 @@ resources:
 
 ingress:
   enabled: true
-  className: nginx
   hosts:
     - host: app-a-qa.example.com
       paths:

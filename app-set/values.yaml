@@ -8,14 +8,49 @@ global:
 apps:
   app-a:
     enabled: true
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+        allowEmpty: true
+      syncOptions:
+        - CreateNamespace=true
+        - PruneLast=true
+        - ServerSideApply=true
+      retry:
+        limit: 5
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m
+    revisionHistoryLimit: 3
     dev:
       helmValues:
+        replicaCount: 1
     qa:
       helmValues:
+        replicaCount: 2
     prod:
       helmValues:
+        replicaCount: 3
   app-b:
     enabled: true
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+        allowEmpty: true
+      syncOptions:
+        - CreateNamespace=true
+        - PruneLast=true
+        - ServerSideApply=true
+      retry:
+        limit: 5
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m
+    revisionHistoryLimit: 3
     dev:
       helmValues:
     qa:
@@ -24,6 +59,22 @@ apps:
       helmValues:
   app-c:
     enabled: true
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+        allowEmpty: true
+      syncOptions:
+        - CreateNamespace=true
+        - PruneLast=true
+        - ServerSideApply=true
+      retry:
+        limit: 5
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m
+    revisionHistoryLimit: 3
     dev:
       helmValues:
     qa:

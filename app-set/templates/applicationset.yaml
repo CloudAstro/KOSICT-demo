@@ -7,28 +7,23 @@ metadata:
   name: {{ $appName }}
   namespace: {{ $.Release.Namespace }}
 spec:
-  goTemplate: {{ $appConfig.goTemplate | default true }}
-  {{- with $appConfig.goTemplateOptions }}
+  goTemplate: true
   goTemplateOptions:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-  
-  {{- if $appConfig.syncPolicy }}
+    - missingkey=error
   syncPolicy:
-    {{- if $appConfig.syncPolicy.preserveResourcesOnDeletion }}
-    preserveResourcesOnDeletion: {{ $appConfig.syncPolicy.preserveResourcesOnDeletion }}
-    {{- end }}
-  {{- end }}
-  
+    preserveResourcesOnDeletion: true
   generators:
     - list:
         elements:
-          {{- range $envName, $envConfig := (omit $appConfig "enabled" "goTemplate" "goTemplateOptions" "syncPolicy" "revisionHistoryLimit") }}
+          {{- range $envName, $envConfig := (omit $appConfig "enabled" "syncPolicy" "revisionHistoryLimit") }}
           - env: {{ $envName | quote }}
+            {{- if $envConfig.helmValues }}
             helmValues:
               {{- toYaml $envConfig.helmValues | nindent 14 }}
+            {{- else }}
+            helmValues: {}
+            {{- end }}
           {{- end }}
-  
   template:
     metadata:
       name: '{{ $appName }}-{{ `{{.env}}` }}'
@@ -37,26 +32,28 @@ spec:
         environment: '{{ `{{.env}}` }}'
       finalizers:
         - resources-finalizer.argocd.argoproj.io
-    
     spec:
       project: {{ $appName | quote }}
       revisionHistoryLimit: {{ $appConfig.revisionHistoryLimit | default 3 }}
-      
-      source:
-        repoURL: {{ $.Values.global.source.repoURL | quote }}
-        targetRevision: {{ $.Values.global.source.targetRevision | quote }}
-        path: 'infra-charts/{{ $appName }}'
-        helm:
-          releaseName: {{ $appName | quote }}
-          values: |
-            {{ `{{- range $key, $value := .helmValues }}` }}
-            {{ `{{ $key }}: {{ $value | toJson }}` }}
-            {{ `{{- end }}` }}
-      
+      sources:
+        - repoURL: {{ $.Values.global.source.repoURL | quote }}
+          targetRevision: {{ $.Values.global.source.targetRevision | quote }}
+          path: 'infra-charts/{{ $appName }}'
+          helm:
+            releaseName: {{ $appName | quote }}
+            valueFiles:
+              - values.yaml
+              - {{ `$values/app-set/apps/` }}{{ $appName }}/{{ `{{.env}}` }}/values.yaml
+            values: |
+              {{ `{{- with .helmValues }}` }}
+              {{ `{{- toYaml . }}` }}
+              {{ `{{- end }}` }}
+        - repoURL: {{ $.Values.global.source.repoURL | quote }}
+          targetRevision: {{ $.Values.global.source.targetRevision | quote }}
+          ref: values
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{ $appName }}-{{ `{{.env}}` }}'
-      
       {{- if $appConfig.syncPolicy }}
       syncPolicy:
         {{- if $appConfig.syncPolicy.automated }}
@@ -65,9 +62,9 @@ spec:
           selfHeal: {{ $appConfig.syncPolicy.automated.selfHeal | default true }}
           allowEmpty: {{ $appConfig.syncPolicy.automated.allowEmpty | default true }}
         {{- end }}
-        {{- with $appConfig.syncPolicy.syncOptions }}
+        {{- if $appConfig.syncPolicy.syncOptions }}
         syncOptions:
-          {{- toYaml . | nindent 10 }}
+          {{- toYaml $appConfig.syncPolicy.syncOptions | nindent 10 }}
         {{- end }}
         {{- if $appConfig.syncPolicy.retry }}
         retry:

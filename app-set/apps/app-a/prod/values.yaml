@@ -1,11 +1,10 @@
-replicaCount: 3
-
 image:
   tag: "1.27.0"
-  pullPolicy: IfNotPresent
 
 html:
   content: "app-a-prod"
+
+replicaCount: 1
 
 resources:
   limits:
@@ -17,15 +16,14 @@ resources:
 
 autoscaling:
   enabled: true
-  minReplicas: 3
-  maxReplicas: 10
+  minReplicas: 1
+  maxReplicas: 2
   targetCPUUtilizationPercentage: 70
 
 ingress:
   enabled: true
-  className: nginx
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-staging
+    cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: app-a.example.com
       paths:

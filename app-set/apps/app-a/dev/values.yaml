@@ -1,5 +1,4 @@
-replicaCount: 1
-
+# Override ONLY dev-specific values
 image:
   tag: "1.27.0-alpine"
   pullPolicy: Always
@@ -17,7 +16,6 @@ resources:
 
 ingress:
   enabled: true
-  className: nginx
   hosts:
     - host: app-a-dev.example.com
       paths:

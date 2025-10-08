@@ -1,6 +1,6 @@
-namespaces:
-  - prod
-  - qa
-  - dev
-
 name: app-a
+description: "NGINX web server application"
+environments:
+  - dev
+  - qa
+  - prod

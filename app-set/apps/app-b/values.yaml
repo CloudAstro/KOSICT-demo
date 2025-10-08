@@ -1,6 +1,6 @@
-namespaces:
-  - prod
-  - qa
-  - dev
-
 name: app-b
+description: "Redis server application"
+environments:
+  - dev
+  - qa
+  - prod
