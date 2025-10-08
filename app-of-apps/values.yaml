@@ -10,9 +10,9 @@ apps:
   cert-manager:
     enabled: true
     namespace: cert-manager
-  blue-green:
+  kosict-canary-demo:
     enabled: true
-    namespace: blue-green
+    namespace: kosict-canary-demo
   openbao:
     enabled: true
     namespace: openbao
