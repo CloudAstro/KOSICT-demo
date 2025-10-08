@@ -1,6 +1,0 @@
-global:
-  env: dev
-
-applicationset:
-  enabled: true
-

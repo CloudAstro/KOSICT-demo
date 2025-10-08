@@ -5,66 +5,28 @@ global:
     repoURL: "https://github.com/CloudAstro/KOSICT-demo.git"
     targetRevision: main
 
-applicationset:
-  name: kosict-app-set
-  enabled: true
-  goTemplate: true
-  goTemplateOptions: ["missingkey=error"]
-  
-  syncPolicy:
-    preserveResourcesOnDeletion: true
-  
-  generators:
-    - git:
-        repoURL: "https://github.com/CloudAstro/KOSICT-demo.git"
-        revision: main
-        directories:
-          - path: 'app-set/apps/*/*'
-          - path: 'app-set/apps/charts'
-            exclude: true
-  
-  template:
-    metadata:
-      name: '{{index .path.segments 2}}-{{index .path.segments 3}}'
-      labels:
-        app: '{{index .path.segments 2}}'
-        environment: '{{index .path.segments 3}}'
-      finalizers:
-        - resources-finalizer.argocd.argoproj.io
-    
-    spec:
-      project: '{{index .path.segments 2}}'
-      revisionHistoryLimit: 3
-      
-      sources:
-        - repoURL: "https://github.com/CloudAstro/KOSICT-demo.git"
-          targetRevision: main
-          path: 'infra-apps/{{index .path.segments 2}}'
-          helm:
-            releaseName: '{{index .path.segments 2}}'
-            valueFiles:
-              - $values/{{.path.path}}/values.yaml
-        
-        - repoURL: "https://github.com/CloudAstro/KOSICT-demo.git"
-          targetRevision: main
-          ref: values
-      
-      destination:
-        server: https://kubernetes.default.svc
-        namespace: '{{index .path.segments 2}}-{{index .path.segments 3}}'
-      
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-          allowEmpty: true
-        syncOptions:
-          - CreateNamespace=true
-          - PruneLast=true
-          - ServerSideApply=true
-        retry:
-          limit: 5
-          backoff:
-            duration: 5s
-            factor: 2
-            maxDuration: 3m
+apps:
+  app-a:
+    enabled: true
+    dev:
+      helmValues:
+    qa:
+      helmValues:
+    prod:
+      helmValues:
+  app-b:
+    enabled: true
+    dev:
+      helmValues:
+    qa:
+      helmValues:
+    prod:
+      helmValues:
+  app-c:
+    enabled: true
+    dev:
+      helmValues:
+    qa:
+      helmValues:
+    prod:
+      helmValues:
