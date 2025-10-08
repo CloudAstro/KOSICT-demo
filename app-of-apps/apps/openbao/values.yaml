@@ -139,7 +139,7 @@ openbao:
           paths:
             - /
       tls:
-        - secretName: openbao-ingress-tls
+        - secretName: admin.cloudastro.io-tls
           hosts:
             - admin.cloudastro.io
 
