@@ -1,5 +1,5 @@
 image:
-  tag: "1.27.0"
+  tag: "1.27.0-alpine"
 
 html:
   content: "app-a-prod"
@@ -8,28 +8,16 @@ replicaCount: 1
 
 resources:
   limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 250m
+    cpu: 200m
     memory: 256Mi
-
-autoscaling:
-  enabled: true
-  minReplicas: 1
-  maxReplicas: 2
-  targetCPUUtilizationPercentage: 70
+  requests:
+    cpu: 100m
+    memory: 128Mi
 
 ingress:
   enabled: true
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: app-a.example.com
       paths:
         - path: /
           pathType: Prefix
-  tls:
-    - secretName: app-a-tls
-      hosts:
-        - app-a.example.com

@@ -19,9 +19,12 @@ spec:
           - env: {{ $envName | quote }}
             {{- if $envConfig.helmValues }}
             helmValues:
-              {{- toYaml $envConfig.helmValues | nindent 14 }}
+              {{- range $name, $value := $envConfig.helmValues }}
+              - name: {{ $name | quote }}
+                value: {{ include "tpl-values" (dict "values" $value "context" $) | quote }}
+              {{- end }}
             {{- else }}
-            helmValues: {}
+            helmValues: []
             {{- end }}
           {{- end }}
   template:
@@ -44,10 +47,6 @@ spec:
             valueFiles:
               - values.yaml
               - {{ `$values/app-set/apps/` }}{{ $appName }}/{{ `{{.env}}` }}/values.yaml
-            values: |
-              {{ `{{- with .helmValues }}` }}
-              {{ `{{- toYaml . }}` }}
-              {{ `{{- end }}` }}
         - repoURL: {{ $.Values.global.source.repoURL | quote }}
           targetRevision: {{ $.Values.global.source.targetRevision | quote }}
           ref: values
@@ -77,5 +76,28 @@ spec:
           {{- end }}
         {{- end }}
       {{- end }}
+  templatePatch: |
+    {{`{{- if .helmValues }}`}}
+    spec:
+      sources:
+        - repoURL: {{ $.Values.global.source.repoURL | quote }}
+          targetRevision: {{ $.Values.global.source.targetRevision | quote }}
+          path: 'infra-charts/{{ $appName }}'
+          helm:
+            releaseName: {{ $appName | quote }}
+            valueFiles:
+              - values.yaml
+              - $values/app-set/apps/{{ $appName }}/{{`{{.env}}`}}/values.yaml
+            parameters:
+            {{`{{- range $param := .helmValues }}`}}
+            - name: {{`{{ $param.name | quote }}`}}
+              value: {{`{{ $param.value | quote }}`}}
+              forceString: true
+            {{`{{- end }}`}}
+        - repoURL: {{ $.Values.global.source.repoURL | quote }}
+          targetRevision: {{ $.Values.global.source.targetRevision | quote }}
+          ref: values
+    {{`{{- end }}`}}
+
 {{- end }}
 {{- end }}

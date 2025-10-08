@@ -4,6 +4,8 @@ image:
 html:
   content: "app-a-qa"
 
+replicaCount: 1
+
 resources:
   limits:
     cpu: 200m

@@ -77,8 +77,10 @@ apps:
     revisionHistoryLimit: 3
     dev:
       helmValues:
+        postgresql.password: vault:secret/data/kosict/app-c/prod#password
     qa:
       helmValues:
+        postgresql.password: vault:secret/data/kosict/app-c/prod#password
     prod:
       helmValues:
         postgresql.password: vault:secret/data/kosict/app-c/prod#password

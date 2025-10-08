@@ -47,3 +47,20 @@ Selector labels
 app.kubernetes.io/name: {{ include "app-set.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{- define "tpl-values" }}
+  {{- if kindIs "string" .values }}
+    {{- tpl .values .context }}
+  {{- else }}
+    {{- tpl (toYaml .values) .context }}
+  {{- end }}
+{{- end }}
+
+{{- define "dictSlice" -}}
+{{- $dict := . -}}
+{{- $slice := list -}}
+{{- range $key, $val := $dict }}
+  {{- $slice = append $slice (dict "name" $key "value" $val) -}}
+{{- end }}
+{{- $slice -}}
+{{- end }}
