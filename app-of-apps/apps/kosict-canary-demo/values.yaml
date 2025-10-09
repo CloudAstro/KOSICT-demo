@@ -26,7 +26,7 @@ stable:
 
 canary:
   fullnameOverride: kosict-demo
-  enabled: true
+  enabled: false
   image:
     tag: green            
   containerPort: 80     
