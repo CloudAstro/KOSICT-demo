@@ -43,7 +43,7 @@ ingress:
     path: /
     pathType: Prefix
   canary:
-    enabled: true
+    enabled: false
     path: /
     pathType: Prefix
     annotations:
