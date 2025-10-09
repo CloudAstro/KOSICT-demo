@@ -38,7 +38,7 @@ spec:
         elements:
           {{- $excludeKeys := list "enabled" "syncPolicy" "applicationSyncPolicy" "revisionHistoryLimit" "labels" "annotations" "ignoreDifferences" "info" "namespaceLabels" "namespaceAnnotations" "project" "prune" "selfHeal" "allowEmpty" "createNamespace" "retry" "syncOptions" "disableAutoSync" "chartPath" "repoURL" "targetRevision" "releaseName" "skipCrds" "passCredentials" "additionalValueFiles" "values" "fileParameters" "ignoreMissingValueFiles" "valuesRepoURL" "valuesTargetRevision" "forceString" "preserveResourcesOnDeletion" "applicationsSync" "finalizers" }}
           {{- range $envName, $envConfig := $appConfig }}
-          {{- if and (not (has $envName $excludeKeys)) $envConfig }}
+          {{- if not (has $envName $excludeKeys) }}
           - env: {{ $envName | quote }}
             server: {{ $envConfig.server | default "https://kubernetes.default.svc" | quote }}
             namespace: {{ $envConfig.namespace | default (printf "%s-%s" $appName $envName) | quote }}
