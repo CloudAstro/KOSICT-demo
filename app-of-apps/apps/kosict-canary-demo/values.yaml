@@ -39,11 +39,11 @@ ingress:
   Canary:
     weight: 20
   stable:
-    enabled: false
+    enabled: true
     path: /
     pathType: Prefix
   canary:
-    enabled: true
+    enabled: false
     path: /
     pathType: Prefix
     annotations:
