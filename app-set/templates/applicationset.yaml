@@ -13,19 +13,24 @@ metadata:
   labels:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- if $appConfig.annotations }}
   annotations:
+    "helm.sh/resource-policy": keep
+    {{- if $appConfig.annotations }}
     {{- toYaml $appConfig.annotations | nindent 4 }}
-  {{- end }}
+    {{- end }}
 spec:
   goTemplate: true
   goTemplateOptions:
     - missingkey=zero
   
   syncPolicy:
-    preserveResourcesOnDeletion: {{ $appConfig.preserveResourcesOnDeletion | default true }}
+    preserveResourcesOnDeletion: {{ $appConfig.preserveResourcesOnDeletion | default $.Values.global.preserveResourcesOnDeletion | default true }}
     {{- if $appConfig.applicationsSync }}
     applicationsSync: {{ $appConfig.applicationsSync }}
+    {{- else if $.Values.global.applicationsSync }}
+    applicationsSync: {{ $.Values.global.applicationsSync }}
+    {{- else }}
+    applicationsSync: create-update
     {{- end }}
   
   generators:
@@ -60,18 +65,24 @@ spec:
         {{ $key }}: {{ $value | quote }}
         {{- end }}
         {{- end }}
-      {{- if or $appConfig.finalizers (not (hasKey $appConfig "finalizers")) }}
+      
+      {{- if $appConfig.finalizers }}
       finalizers:
-        {{- if $appConfig.finalizers }}
         {{- toYaml $appConfig.finalizers | nindent 8 }}
-        {{- else }}
+      {{- else }}
+      finalizers:
         - resources-finalizer.argocd.argoproj.io
-        {{- end }}
       {{- end }}
-      {{- if $appConfig.annotations }}
+      
       annotations:
-        {{- toYaml $appConfig.annotations | nindent 8 }}
-      {{- end }}
+        argocd.argoproj.io/sync-options: Delete=false
+        {{- if $appConfig.annotations }}
+        {{- range $key, $value := $appConfig.annotations }}
+        {{- if ne $key "argocd.argoproj.io/sync-options" }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
     
     spec:
       project: {{ $appConfig.project | default $.Values.global.projectName | default $appName }}
@@ -111,14 +122,17 @@ spec:
           kind: Job
           jqPathExpressions:
             - '.spec.template.spec.containers[].env[]? | select(.name | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
+            - '.spec.template.spec.initContainers[].env[]? | select(.name | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
         - group: batch
           kind: CronJob
           jqPathExpressions:
             - '.spec.jobTemplate.spec.template.spec.containers[].env[]? | select(.name | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
+            - '.spec.jobTemplate.spec.template.spec.initContainers[].env[]? | select(.name | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
         - group: ""
           kind: Secret
           jqPathExpressions:
             - '.data | to_entries[]? | select(.key | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
+            - '.stringData | to_entries[]? | select(.key | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
         - group: ""
           kind: ConfigMap
           jqPathExpressions:

@@ -14,6 +14,9 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   annotations:
+    # Prevent Helm from deleting this Application
+    "helm.sh/resource-policy": {{ $chartValues.helmResourcePolicy | default "keep" }}
+    # Checksums for change detection
     parametersChecksum: {{ (print $chartValues.helmValues) | sha256sum }}-{{ print $.Values.global | sha256sum }}
     {{- if $chartValues.valueFile }}
     valueFileChecksum: {{ (print ($.Files.Get $chartValues.valueFile)) | sha256sum }}
@@ -24,43 +27,94 @@ metadata:
     {{- with $chartValues.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with $chartValues.finalizers }}
+  {{- if or $chartValues.finalizers (not (hasKey $chartValues "finalizers")) }}
   finalizers:
-    {{- toYaml . | nindent 2 }}
+    {{- if $chartValues.finalizers }}
+    {{- toYaml $chartValues.finalizers | nindent 4 }}
+    {{- else }}
+    - resources-finalizer.argocd.argoproj.io
+    {{- end }}
   {{- end }}
 spec:
   project: {{ $chartValues.project | default $.Values.global.projectName | default $.Release.Name }}
   revisionHistoryLimit: {{ $chartValues.revisionHistoryLimit | default 3 }}
+  
   {{- with $chartValues.info }}
   info:
-    {{- toYaml . | nindent 2 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- if $chartValues.ignoreDifferences }}
+  
+  {{- if or $chartValues.ignoreDifferences $.Values.global.ignoreDifferences }}
   ignoreDifferences:
-    {{- toYaml $chartValues.ignoreDifferences | nindent 2 }}
+    {{- if $.Values.global.ignoreDifferences }}
+    {{- toYaml $.Values.global.ignoreDifferences | nindent 4 }}
+    {{- end }}
+    {{- if $chartValues.ignoreDifferences }}
+    {{- toYaml $chartValues.ignoreDifferences | nindent 4 }}
+    {{- end }}
+  {{- else }}
+  # Default: Ignore vault-injected secrets and sensitive env vars
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jqPathExpressions:
+        - '.spec.template.spec.containers[].env[]? | select(.name | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
+        - '.spec.template.spec.initContainers[].env[]? | select(.name | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
+    - group: apps
+      kind: StatefulSet
+      jqPathExpressions:
+        - '.spec.template.spec.containers[].env[]? | select(.name | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
+        - '.spec.template.spec.initContainers[].env[]? | select(.name | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
+    - group: apps
+      kind: DaemonSet
+      jqPathExpressions:
+        - '.spec.template.spec.containers[].env[]? | select(.name | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
+        - '.spec.template.spec.initContainers[].env[]? | select(.name | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
+    - group: batch
+      kind: Job
+      jqPathExpressions:
+        - '.spec.template.spec.containers[].env[]? | select(.name | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
+    - group: batch
+      kind: CronJob
+      jqPathExpressions:
+        - '.spec.jobTemplate.spec.template.spec.containers[].env[]? | select(.name | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
+    - group: ""
+      kind: Secret
+      jqPathExpressions:
+        - '.data | to_entries[]? | select(.key | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
+    - group: ""
+      kind: ConfigMap
+      jqPathExpressions:
+        - '.data | to_entries[]? | select(.key | test("PASSWORD|PASS|SECRET|TOKEN|KEY|CREDENTIAL|AUTH|ACCESS|API"))'
   {{- end }}
+  
   {{- if $chartValues.syncPolicy }}
   syncPolicy:
     {{- toYaml $chartValues.syncPolicy | nindent 4 }}
   {{- else if not $chartValues.disableAutoSync }}
   syncPolicy:
+    {{- /* Namespace metadata management */ -}}
     {{- $namespaceLabels := dict }}
     {{- $namespaceAnnotations := dict }}
+    
     {{- if $.Values.global.namespaceLabels }}
     {{- $namespaceLabels = $.Values.global.namespaceLabels }}
     {{- end }}
     {{- if $.Values.global.namespaceAnnotations }}
     {{- $namespaceAnnotations = $.Values.global.namespaceAnnotations }}
     {{- end }}
+    
     {{- if $chartValues.namespaceLabels }}
     {{- $namespaceLabels = mergeOverwrite $namespaceLabels $chartValues.namespaceLabels }}
     {{- end }}
     {{- if $chartValues.namespaceAnnotations }}
     {{- $namespaceAnnotations = mergeOverwrite $namespaceAnnotations $chartValues.namespaceAnnotations }}
     {{- end }}
+    
     {{- if and (not $namespaceLabels) (not $.Values.global.namespaceLabels) (not $chartValues.namespaceLabels) }}
     {{- $namespaceLabels = dict "secret-inject" "true" }}
     {{- end }}
+    
     {{- if or $namespaceLabels $namespaceAnnotations }}
     managedNamespaceMetadata:
       {{- if $namespaceLabels }}
@@ -81,19 +135,28 @@ spec:
       prune: {{ $chartValues.prune | default true }}
       selfHeal: {{ $chartValues.selfHeal | default true }}
       allowEmpty: {{ $chartValues.allowEmpty | default true }}
+    
     {{- if $chartValues.retry }}
     retry:
       {{- toYaml $chartValues.retry | nindent 6 }}
+    {{- else }}
+    retry:
+      limit: {{ $chartValues.retryLimit | default 5 }}
+      backoff:
+        duration: {{ $chartValues.retryDuration | default "5s" }}
+        factor: {{ $chartValues.retryFactor | default 2 }}
+        maxDuration: {{ $chartValues.retryMaxDuration | default "3m" }}
     {{- end }}
+    
     syncOptions:
       - CreateNamespace={{ $chartValues.createNamespace | default true }}
-      {{- with $.Values.global.syncOptions }}
-      {{- range . }}
+      {{- if $.Values.global.syncOptions }}
+      {{- range $.Values.global.syncOptions }}
       - {{ . }}
       {{- end }}
       {{- end }}
-      {{- with $chartValues.syncOptions }}
-      {{- range . }}
+      {{- if $chartValues.syncOptions }}
+      {{- range $chartValues.syncOptions }}
       - {{ . }}
       {{- end }}
       {{- end }}
@@ -112,7 +175,7 @@ spec:
   
   {{- if $chartValues.sources }}
   sources:
-    {{- toYaml $chartValues.sources | nindent 2 }}
+    {{- toYaml $chartValues.sources | nindent 4 }}
   {{- else }}
   source:
     {{- if $chartValues.repoURL }}
@@ -120,6 +183,7 @@ spec:
     {{- else }}
     repoURL: {{ tpl $.Values.global.source.repoURL $ }}
     {{- end }}
+    
     {{- if $chartValues.targetRevision }}
     targetRevision: {{ tpl $chartValues.targetRevision $ }}
     {{- else if $.Values.global.source.targetRevision }}
@@ -127,39 +191,52 @@ spec:
     {{- else }}
     targetRevision: HEAD
     {{- end }}
+    
     {{- if $chartValues.path }}
     path: {{ tpl $chartValues.path $ }}
     {{- else if $chartValues.appsBasePath }}
     path: {{ tpl $chartValues.appsBasePath $ }}
-    {{- else }}
+    {{- else if $.Values.global.source.appsBasePath }}
     path: {{ tpl $.Values.global.source.appsBasePath $ }}/{{ $chartName }}
     {{- end }}
+    
     {{- with $chartValues.chart }}
     chart: {{ tpl . $ }}
     {{- end }}
+    
     {{- if or $chartValues.helm $.Values.global.helmValues $chartValues.helmValues $chartValues.valueFile $chartValues.values }}
     helm:
-      passCredentials: {{ $chartValues.passCredentials | default true }}
+      {{- if hasKey $chartValues "passCredentials" }}
+      passCredentials: {{ $chartValues.passCredentials }}
+      {{- else }}
+      passCredentials: true
+      {{- end }}
+      
       {{- with $chartValues.releaseName }}
       releaseName: {{ tpl . $ }}
       {{- end }}
+      
       {{- if hasKey $chartValues "skipCrds" }}
       skipCrds: {{ $chartValues.skipCrds }}
       {{- end }}
+      
       {{- with $chartValues.valueFiles }}
       valueFiles:
         {{- range . }}
         - {{ tpl . $ }}
         {{- end }}
       {{- end }}
+      
       {{- if $chartValues.valueFile }}
       values: |
         {{- include "tpl-values" (dict "values" ($.Files.Get $chartValues.valueFile) "context" $) | nindent 8 }}
       {{- end }}
+      
       {{- if $chartValues.values }}
       values: |
         {{- include "tpl-values" (dict "values" $chartValues.values "context" $) | nindent 8 }}
       {{- end }}
+      
       {{- if or $.Values.global.helmValues $chartValues.helmValues }}
       parameters:
         {{- range $name, $value := $.Values.global.helmValues }}
@@ -177,30 +254,41 @@ spec:
           {{- end }}
         {{- end }}
       {{- end }}
+      
       {{- with $chartValues.fileParameters }}
       fileParameters:
-        {{- toYaml . | nindent 6 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
+      
       {{- if hasKey $chartValues "ignoreMissingValueFiles" }}
       ignoreMissingValueFiles: {{ $chartValues.ignoreMissingValueFiles }}
       {{- end }}
     {{- end }}
+    
     {{- with $chartValues.kustomize }}
     kustomize:
       {{- toYaml . | nindent 6 }}
     {{- end }}
+    
     {{- with $chartValues.plugin }}
     plugin:
       {{- toYaml . | nindent 6 }}
     {{- end }}
+    
     {{- with $chartValues.directory }}
     directory:
       {{- toYaml . | nindent 6 }}
     {{- end }}
+    
+    {{- with $chartValues.ref }}
+    ref: {{ . }}
+    {{- end }}
   {{- end }}
+  
   {{- with $chartValues.operation }}
   operation:
     {{- toYaml . | nindent 4 }}
   {{- end }}
+
 {{- end }}
 {{- end }}
