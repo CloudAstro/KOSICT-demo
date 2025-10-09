@@ -60,11 +60,11 @@ apps:
         maxDuration: 3m
     revisionHistoryLimit: 3
     dev:
-      # helmValues:
+      helmValues:
       #   postgresql.password: vault:secret/data/kosict/app-c/dev#password
     qa:
-      # helmValues:
+      helmValues:
       #   postgresql.password: vault:secret/data/kosict/app-c/qa#password
-    # prod:
-    #   helmValues:
+    prod:
+      helmValues:
     #     postgresql.password: vault:secret/data/kosict/app-c/prod#password
