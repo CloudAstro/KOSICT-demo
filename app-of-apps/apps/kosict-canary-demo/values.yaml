@@ -26,7 +26,7 @@ stable:
 
 canary:
   fullnameOverride: kosict-demo
-  enabled: true
+  enabled: false
   image:
     tag: green            
   containerPort: 80     
@@ -39,7 +39,7 @@ ingress:
   Canary:
     weight: 20
   stable:
-    enabled: true
+    enabled: false
     path: /
     pathType: Prefix
   canary:
