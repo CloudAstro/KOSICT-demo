@@ -38,7 +38,7 @@ spec:
         elements:
           {{- $excludeKeys := list "enabled" "syncPolicy" "applicationSyncPolicy" "revisionHistoryLimit" "labels" "annotations" "ignoreDifferences" "info" "namespaceLabels" "namespaceAnnotations" "project" "prune" "selfHeal" "allowEmpty" "createNamespace" "retry" "syncOptions" "disableAutoSync" "chartPath" "repoURL" "targetRevision" "releaseName" "skipCrds" "passCredentials" "additionalValueFiles" "values" "fileParameters" "ignoreMissingValueFiles" "valuesRepoURL" "valuesTargetRevision" "forceString" "preserveResourcesOnDeletion" "applicationsSync" "finalizers" }}
           {{- range $envName, $envConfig := $appConfig }}
-          {{- if not (has $envName $excludeKeys) }}
+          {{- if and (not (has $envName $excludeKeys)) $envConfig }}
           - env: {{ $envName | quote }}
             server: {{ $envConfig.server | default "https://kubernetes.default.svc" | quote }}
             namespace: {{ $envConfig.namespace | default (printf "%s-%s" $appName $envName) | quote }}
@@ -238,9 +238,7 @@ spec:
         - repoURL: {{ $appConfig.valuesRepoURL | default $.Values.global.source.repoURL | quote }}
           targetRevision: {{ $appConfig.valuesTargetRevision | default $.Values.global.source.targetRevision | quote }}
           ref: values
-  
   templatePatch: |
-    {{`{{- if .helmValues }}`}}
     spec:
       sources:
         - repoURL: {{ $appConfig.repoURL | default $.Values.global.source.repoURL | quote }}
@@ -261,6 +259,7 @@ spec:
               {{- end }}
               {{- end }}
               - $values/app-set/apps/{{ $appName }}/{{`{{.env}}`}}/values.yaml
+            {{`{{- if .helmValues }}`}}
             parameters:
             {{`{{- range $param := .helmValues }}`}}
             - name: {{`{{ $param.name | quote }}`}}
@@ -271,10 +270,10 @@ spec:
             values: |
               {{- include "tpl-values" (dict "values" $appConfig.values "context" $) | nindent 14 }}
             {{- end }}
+           {{`{{- end }}`}}
         - repoURL: {{ $appConfig.valuesRepoURL | default $.Values.global.source.repoURL | quote }}
           targetRevision: {{ $appConfig.valuesTargetRevision | default $.Values.global.source.targetRevision | quote }}
           ref: values
-    {{`{{- end }}`}}
 
 {{- end }}
 {{- end }}
