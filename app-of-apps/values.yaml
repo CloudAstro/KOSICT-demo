@@ -6,24 +6,24 @@ global:
     repoURL: "https://github.com/CloudAstro/KOSICT-demo.git"
     targetRevision: main
 
-apps:
-  cert-manager:
-    enabled: true
-    namespace: cert-manager
-  kosict-canary-demo:
-    enabled: true
-    namespace: kosict-canary-demo
-  openbao:
-    enabled: true
-    namespace: openbao
-  vault-secrets-webhook:
-    enabled: true
-    namespace: vault-secrets-webhook
-    helmValues:
-      vault-secrets-webhook.env.VAULT_ADDR: "http://openbao.openbao.svc:8200"
-  storage-classes:
-    enabled: true
-    namespace: storage-classes
-  ingress-nginx:
-    enabled: true
-    namespace: ingress-nginx
+# apps:
+#   cert-manager:
+#     enabled: true
+#     namespace: cert-manager
+#   kosict-canary-demo:
+#     enabled: true
+#     namespace: kosict-canary-demo
+#   openbao:
+#     enabled: true
+#     namespace: openbao
+#   vault-secrets-webhook:
+#     enabled: true
+#     namespace: vault-secrets-webhook
+#     helmValues:
+#       vault-secrets-webhook.env.VAULT_ADDR: "http://openbao.openbao.svc:8200"
+#   storage-classes:
+#     enabled: true
+#     namespace: storage-classes
+#   ingress-nginx:
+#     enabled: true
+#     namespace: ingress-nginx
